@@ -67,47 +67,47 @@ const generateStudents = (count: number): Student[] => {
   }));
 };
 
-// Generate mock classes
+// Generate mock classes with engineering subjects
 export const mockClasses: Class[] = [
   {
     id: "class-1",
-    name: "Mathematics 101",
-    description: "Introductory mathematics course covering algebra and geometry",
-    schedule: "Monday, Wednesday, Friday - 9:00 AM to 10:30 AM",
-    grade: "9th Grade",
+    name: "SE MME - Fluid Technology",
+    description: "Second Year Mechanical Engineering - Fluid Technology",
+    schedule: "Monday, Wednesday - 9:00 AM to 10:30 AM",
+    grade: "SE MME",
     students: generateStudents(24),
   },
   {
     id: "class-2",
-    name: "English Literature",
-    description: "Study of classic literature and composition",
+    name: "SE MME - Theory of Machines",
+    description: "Second Year Mechanical Engineering - Theory of Machines",
     schedule: "Tuesday, Thursday - 11:00 AM to 12:30 PM",
-    grade: "10th Grade",
-    students: generateStudents(21),
+    grade: "SE MME",
+    students: generateStudents(22),
   },
   {
     id: "class-3",
-    name: "Physics",
-    description: "Introduction to mechanics and thermodynamics",
+    name: "TE MME - Production Engineering Design",
+    description: "Third Year Mechanical Engineering - Production Engineering Design",
     schedule: "Monday, Wednesday - 1:00 PM to 2:30 PM",
-    grade: "11th Grade",
-    students: generateStudents(18),
-  },
-  {
-    id: "class-4",
-    name: "Chemistry",
-    description: "General chemistry principles and lab work",
-    schedule: "Tuesday, Thursday - 2:00 PM to 3:30 PM",
-    grade: "11th Grade",
+    grade: "TE MME",
     students: generateStudents(20),
   },
   {
+    id: "class-4",
+    name: "TE MME - Mathematics-IV",
+    description: "Third Year Mechanical Engineering - Applied Mathematics IV",
+    schedule: "Tuesday, Thursday - 2:00 PM to 3:30 PM",
+    grade: "TE MME",
+    students: generateStudents(19),
+  },
+  {
     id: "class-5",
-    name: "World History",
-    description: "Survey of global historical events and civilizations",
-    schedule: "Monday, Wednesday, Friday - 10:45 AM to 11:45 AM",
-    grade: "10th Grade",
-    students: generateStudents(23),
+    name: "BE MME - Environmental Studies",
+    description: "Final Year Mechanical Engineering - Environmental Studies",
+    schedule: "Friday - 10:45 AM to 12:45 PM",
+    grade: "BE MME",
+    students: generateStudents(18),
   },
 ];
 

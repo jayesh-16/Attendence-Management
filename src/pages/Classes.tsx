@@ -18,7 +18,8 @@ import {
   CalendarClock,
   Users,
   MoreHorizontal,
-  UserCheck
+  UserCheck,
+  GraduationCap
 } from "lucide-react";
 import { mockClasses } from "@/lib/mock-data";
 import { format } from "date-fns";
@@ -46,13 +47,27 @@ const Classes = () => {
   const handleTakeAttendance = (classId: string) => {
     navigate(`/attendance/${classId}/${today}`);
   };
+
+  // Get unique grades for displaying badges
+  const getGradeBadgeColor = (grade: string) => {
+    switch(grade) {
+      case "SE MME":
+        return "bg-blue-500";
+      case "TE MME":
+        return "bg-green-500";
+      case "BE MME":
+        return "bg-purple-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
   
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Classes</h1>
-          <p className="text-muted-foreground mt-1">Manage your classes</p>
+          <p className="text-muted-foreground mt-1">Manage MME department classes</p>
         </div>
         
         <div className="flex items-center gap-2">
@@ -68,8 +83,8 @@ const Classes = () => {
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>Classes</CardTitle>
-                <CardDescription className="mt-1.5">List of your current classes</CardDescription>
+                <CardTitle>Engineering Classes</CardTitle>
+                <CardDescription className="mt-1.5">Mechanical Engineering Department Classes</CardDescription>
               </div>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -99,10 +114,13 @@ const Classes = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <BookOpen size={20} className="text-primary" />
+                              <GraduationCap size={20} className="text-primary" />
                             </div>
-                            <div>
-                              <h3 className="font-medium text-lg">{cls.name}</h3>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-lg">{cls.name}</h3>
+                                <Badge className={`${getGradeBadgeColor(cls.grade)} text-white`}>{cls.grade}</Badge>
+                              </div>
                               <p className="text-sm text-muted-foreground">{cls.grade}</p>
                             </div>
                           </div>
