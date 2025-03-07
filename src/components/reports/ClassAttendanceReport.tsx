@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Class } from "@/types";
 import { calculateAttendanceStats, generateAttendanceRecords } from "@/lib/mock-data";
-import { BarChart, BarChartIcon } from "lucide-react";
+import { BarChartIcon } from "lucide-react";
 import { 
   BarChart as RechartsBarChart, 
   Bar, 
+  Cell,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -132,7 +133,7 @@ const ClassAttendanceReport = ({
                       <XAxis dataKey="name" />
                       <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
                       <Tooltip />
-                      <Bar dataKey="value" nameKey="name" fill="#8884d8">
+                      <Bar dataKey="value" fill="#8884d8">
                         {barChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
