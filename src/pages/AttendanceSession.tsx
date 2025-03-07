@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -24,7 +23,8 @@ import {
   CheckCircle2,
   XCircle,
   BadgeAlert,
-  FileSparkles
+  FileIcon,
+  Sparkles
 } from "lucide-react";
 import { 
   mockClasses, 
@@ -393,7 +393,7 @@ const AttendanceSession = () => {
               </div>
               
               <Button variant="outline" className="w-full gap-2">
-                <FileSparkles size={16} />
+                <Sparkles size={16} />
                 Generate Report
               </Button>
             </div>
@@ -571,7 +571,7 @@ const StudentAttendanceRow = ({ data, updateStatus, openNoteDialog }: StudentAtt
                 onClick={() => openNoteDialog(student.id)}
               >
                 {note ? (
-                  <FileSparkles className="text-primary" size={18} />
+                  <Sparkles className="text-primary" size={18} />
                 ) : (
                   <FileText size={18} />
                 )}
