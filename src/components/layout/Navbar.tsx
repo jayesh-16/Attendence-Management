@@ -1,5 +1,5 @@
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { 
   Home, 
   Calendar, 
@@ -8,7 +8,8 @@ import {
   Settings, 
   Bell,
   BarChart,
-  ChevronDown
+  ChevronDown,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  
   const navItems = [
     { icon: Home, label: "Dashboard", path: "/" },
     { icon: Calendar, label: "Attendance", path: "/attendance" },
@@ -31,6 +36,18 @@ const Navbar = () => {
     { icon: BarChart, label: "Reports", path: "/reports" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const getInitials = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`;
+    }
+    return user?.email?.charAt(0).toUpperCase() || 'U';
+  };
 
   return (
     <nav className="sticky top-0 z-10 w-full bg-background border-b border-border h-16 px-4 sm:px-6">
@@ -106,18 +123,25 @@ const Navbar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full" size="icon">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src="https://ui-avatars.com/api/?name=Sarah+Teacher" />
-                  <AvatarFallback>ST</AvatarFallback>
+                  <AvatarImage src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${getInitials()}`} />
+                  <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {profile?.first_name && profile?.last_name
+                  ? `${profile.first_name} ${profile.last_name}`
+                  : user?.email}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center gap-2" onSelect={() => navigate('/settings')}>
+                <Settings size={16} />
+                Profile Settings
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="text-destructive flex items-center gap-2" onSelect={handleSignOut}>
+                <LogOut size={16} />
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
