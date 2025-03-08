@@ -27,12 +27,12 @@ const AttendanceOverviewReport = ({ stats, classes }: AttendanceOverviewReportPr
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card className="col-span-full md:col-span-1">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <Card className="col-span-full md:col-span-1 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-purple-light/30">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-primary/10 to-secondary/10">
           <CardTitle className="text-base font-medium">Attendance Overview</CardTitle>
-          <PieChart className="h-4 w-4 text-muted-foreground" />
+          <PieChart className="h-4 w-4 text-primary" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPlot>
@@ -57,12 +57,12 @@ const AttendanceOverviewReport = ({ stats, classes }: AttendanceOverviewReportPr
         </CardContent>
       </Card>
 
-      <Card className="col-span-full md:col-span-1">
-        <CardHeader>
+      <Card className="col-span-full md:col-span-1 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+        <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10">
           <CardTitle className="text-base font-medium">Attendance Summary</CardTitle>
           <CardDescription>Overall attendance statistics</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -129,15 +129,15 @@ const AttendanceOverviewReport = ({ stats, classes }: AttendanceOverviewReportPr
         </CardContent>
       </Card>
 
-      <Card className="col-span-full md:col-span-1">
-        <CardHeader>
+      <Card className="col-span-full md:col-span-1 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-purple-light/30">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10">
           <CardTitle className="text-base font-medium">Class Information</CardTitle>
           <CardDescription>Total number of classes: {classes.length}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="space-y-4">
             {classes.map((classItem) => (
-              <div key={classItem.id} className="flex justify-between items-center">
+              <div key={classItem.id} className="flex justify-between items-center p-2 hover:bg-muted/10 rounded-md transition-colors">
                 <div className="text-sm font-medium">{classItem.name}</div>
                 <div className="text-sm text-muted-foreground">{classItem.students.length} students</div>
               </div>

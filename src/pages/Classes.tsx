@@ -66,12 +66,12 @@ const Classes = () => {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Classes</h1>
+          <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Classes</h1>
           <p className="text-muted-foreground mt-1">Manage MME department classes</p>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button className="gap-2">
+          <Button variant="gradient" className="gap-2">
             <Plus size={16} />
             Add Class
           </Button>
@@ -79,8 +79,8 @@ const Classes = () => {
       </div>
       
       <div className="grid grid-cols-1 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-purple-light/30">
+          <CardHeader className="pb-3 bg-gradient-to-r from-primary/10 to-secondary/10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle>Engineering Classes</CardTitle>
@@ -97,7 +97,7 @@ const Classes = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="grid gap-4">
               {filteredClasses.length === 0 ? (
                 <div className="py-12 text-center">
@@ -107,19 +107,19 @@ const Classes = () => {
                 filteredClasses.map((cls) => (
                   <div 
                     key={cls.id}
-                    className="border rounded-lg p-5 hover:bg-muted/10 transition-colors"
+                    className="border rounded-lg p-5 hover:bg-muted/10 transition-colors hover-scale shadow-sm"
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <GraduationCap size={20} className="text-primary" />
+                            <div className="h-10 w-10 rounded-full bg-gradient-primary flex items-center justify-center">
+                              <GraduationCap size={20} className="text-white" />
                             </div>
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
                                 <h3 className="font-medium text-lg">{cls.name}</h3>
-                                <Badge className={`${getGradeBadgeColor(cls.grade)} text-white`}>{cls.grade}</Badge>
+                                <Badge className={`${getGradeBadgeColor(cls.grade)} text-white shadow-sm`}>{cls.grade}</Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">{cls.grade}</p>
                             </div>
@@ -146,12 +146,12 @@ const Classes = () => {
                           
                           <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 text-sm">
                             <div className="flex items-center gap-2">
-                              <CalendarClock size={16} className="text-muted-foreground" />
+                              <CalendarClock size={16} className="text-primary" />
                               <span>{cls.schedule}</span>
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <Users size={16} className="text-muted-foreground" />
+                              <Users size={16} className="text-primary" />
                               <span>{cls.students.length} Students</span>
                             </div>
                           </div>
@@ -163,17 +163,18 @@ const Classes = () => {
                           {cls.students.slice(0, 4).map((student) => (
                             <Avatar key={student.id} className="h-8 w-8 border-2 border-background">
                               <AvatarImage src={student.avatarUrl} />
-                              <AvatarFallback>{student.name.substring(0, 2)}</AvatarFallback>
+                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20">{student.name.substring(0, 2)}</AvatarFallback>
                             </Avatar>
                           ))}
                           {cls.students.length > 4 && (
-                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center border-2 border-background text-xs font-medium">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-background text-xs font-medium">
                               +{cls.students.length - 4}
                             </div>
                           )}
                         </div>
                         
                         <Button
+                          variant="gradient"
                           onClick={() => handleTakeAttendance(cls.id)}
                           className="gap-2"
                         >

@@ -109,51 +109,52 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">MME-AT-TRACKING</h1>
+        <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">MME-AT-TRACKING</h1>
         
         <div className="flex items-center gap-4">
           <div className="flex items-center">
-            <Clock className="mr-2 h-5 w-5" />
+            <Clock className="mr-2 h-5 w-5 text-primary" />
             <span>Today: {format(currentDate, 'M/d/yyyy')}</span>
           </div>
           
-          <Button onClick={() => navigate('/attendance')} className="whitespace-nowrap">
+          <Button variant="gradient" onClick={() => navigate('/attendance')} className="whitespace-nowrap">
             Take Attendance
           </Button>
         </div>
       </div>
       
-      <Tabs defaultValue="current-classes">
-        <TabsList className="w-full max-w-md">
-          <TabsTrigger value="current-classes" className="flex-1">Current Classes</TabsTrigger>
-          <TabsTrigger value="statistics" className="flex-1">Statistics</TabsTrigger>
-          <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
+      <Tabs defaultValue="current-classes" className="space-y-4">
+        <TabsList className="w-full max-w-md bg-muted/50">
+          <TabsTrigger value="current-classes" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Current Classes</TabsTrigger>
+          <TabsTrigger value="statistics" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Statistics</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">History</TabsTrigger>
         </TabsList>
         
         <TabsContent value="current-classes" className="space-y-6 mt-6">
           {/* Class cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {classes.map((cls) => (
-              <Card key={cls.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
+              <Card key={cls.id} className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-purple-light/30 hover-scale">
+                <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-2">
                   <CardTitle className="text-xl">{cls.name}</CardTitle>
                   <p className="text-muted-foreground text-sm">{cls.grade}</p>
                 </CardHeader>
                 <CardContent className="space-y-3 pb-4">
                   <div className="flex items-center text-muted-foreground">
-                    <Clock className="h-4 w-4 mr-2" />
+                    <Clock className="h-4 w-4 mr-2 text-primary" />
                     <span className="text-sm">{cls.time}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-2" />
+                      <Users className="h-4 w-4 mr-2 text-primary" />
                       <span className="text-sm">Students: {cls.students}</span>
                     </div>
                     
                     <Button 
+                      variant="gradient"
                       onClick={() => handleTakeAttendance(cls.id)}
                       size={isMobile ? "sm" : "default"}
                     >
@@ -167,8 +168,8 @@ const Dashboard: React.FC = () => {
           
           {/* Current class detail */}
           {currentClass && (
-            <Card className="animate-fade-in">
-              <CardHeader>
+            <Card className="animate-fade-in overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+              <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
                 <CardTitle>Current Class: {currentClass}</CardTitle>
                 <p className="text-muted-foreground text-sm">
                   Mark students as present, absent, or late. Changes are saved automatically.
@@ -203,8 +204,8 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="border rounded-md">
-                  <div className="grid grid-cols-12 gap-4 p-3 border-b bg-muted/50 font-medium">
+                <div className="border rounded-md overflow-hidden shadow-sm">
+                  <div className="grid grid-cols-12 gap-4 p-3 border-b bg-gradient-to-r from-primary/5 to-secondary/5 font-medium">
                     <div className="col-span-5 sm:col-span-4">Student</div>
                     <div className="col-span-4 sm:col-span-3 text-center">Status</div>
                     <div className="col-span-3 sm:col-span-2 text-center">Actions</div>
@@ -212,11 +213,11 @@ const Dashboard: React.FC = () => {
                   </div>
                   
                   {students.map((student) => (
-                    <div key={student.id} className="grid grid-cols-12 gap-4 p-3 border-b items-center">
+                    <div key={student.id} className="grid grid-cols-12 gap-4 p-3 border-b items-center hover:bg-muted/20 transition-colors">
                       <div className="col-span-5 sm:col-span-4 flex items-center gap-2 min-w-0">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
+                        <Avatar className="h-8 w-8 flex-shrink-0 border border-primary/20">
                           <AvatarImage src={student.avatarUrl} />
-                          <AvatarFallback className="text-xs">{student.name.substring(0, 2)}</AvatarFallback>
+                          <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-secondary/20">{student.name.substring(0, 2)}</AvatarFallback>
                         </Avatar>
                         <div className="truncate">
                           <div className="font-medium truncate">{student.name}</div>
@@ -229,10 +230,10 @@ const Dashboard: React.FC = () => {
                       </div>
                       
                       <div className="col-span-3 sm:col-span-2 flex justify-center gap-1">
-                        <Button size="icon" variant="outline" className="h-8 w-8 rounded-full">
+                        <Button size="icon" variant="outline" className="h-8 w-8 rounded-full hover:bg-green-500/10 hover:text-green-500 hover:border-green-500/30">
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="outline" className="h-8 w-8 rounded-full">
+                        <Button size="icon" variant="outline" className="h-8 w-8 rounded-full hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30">
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -249,8 +250,8 @@ const Dashboard: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="statistics">
-          <Card className="mt-6">
-            <CardHeader>
+          <Card className="mt-6 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
               <CardTitle>Attendance Statistics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -309,8 +310,8 @@ const Dashboard: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="history">
-          <Card className="mt-6">
-            <CardHeader>
+          <Card className="mt-6 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-purple-light/30">
+            <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-4">
               <CardTitle>Attendance History</CardTitle>
             </CardHeader>
             <CardContent>

@@ -79,18 +79,18 @@ const Students = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Students</h1>
+          <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Students</h1>
           <p className="text-muted-foreground mt-1">Manage student data and attendance records</p>
         </div>
         
-        <Button className="gap-2">
+        <Button variant="gradient" className="gap-2">
           <UserPlus className="h-4 w-4" />
           Add Student
         </Button>
       </div>
       
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+      <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
           <div>
             <CardTitle>Student Directory</CardTitle>
             <CardDescription>View and manage student information</CardDescription>
@@ -106,8 +106,8 @@ const Students = () => {
             />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="border rounded-md divide-y">
+        <CardContent className="p-4">
+          <div className="border rounded-md divide-y shadow-sm overflow-hidden">
             {filteredStudents.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="text-muted-foreground">No students found</p>
@@ -117,25 +117,25 @@ const Students = () => {
                 const attendance = getAttendanceIndicator(student.attendanceRate);
                 
                 return (
-                  <div key={student.id} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 items-center">
+                  <div key={student.id} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 items-center hover:bg-muted/10 transition-colors">
                     <div className="sm:col-span-4 flex items-center gap-4">
-                      <Avatar className="h-10 w-10 flex-shrink-0">
+                      <Avatar className="h-10 w-10 flex-shrink-0 border border-primary/20">
                         <AvatarImage src={student.avatar} />
-                        <AvatarFallback>{student.name.substring(0, 2)}</AvatarFallback>
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20">{student.name.substring(0, 2)}</AvatarFallback>
                       </Avatar>
                       
                       <div className="min-w-0">
                         <div className="font-medium flex items-center gap-2">
                           {student.name}
-                          <Badge className="ml-2">{student.grade}</Badge>
+                          <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-primary/10 to-secondary/10">{student.grade}</Badge>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
+                            <Mail className="h-3 w-3 text-primary" />
                             <span className="truncate">{student.email}</span>
                           </div>
                           <div className="hidden sm:flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
+                            <Phone className="h-3 w-3 text-primary" />
                             <span>{student.phone}</span>
                           </div>
                         </div>
@@ -143,18 +143,18 @@ const Students = () => {
                     </div>
                     
                     <div className="sm:col-span-3 flex items-center sm:justify-center mt-2 sm:mt-0">
-                      <Badge className={`${attendance.color} flex items-center gap-1 text-white`}>
+                      <Badge className={`${attendance.color} flex items-center gap-1 text-white shadow-sm`}>
                         {attendance.icon}
                         <span>{student.attendanceRate}% Attendance</span>
                       </Badge>
                     </div>
                     
                     <div className="sm:col-span-5 flex justify-end sm:justify-center gap-2 mt-2 sm:mt-0">
-                      <Button size={isMobile ? "sm" : "default"} className="gap-1">
+                      <Button variant="gradient" size={isMobile ? "sm" : "default"} className="gap-1">
                         <UserCheck className="h-4 w-4" />
                         <span className="hidden sm:inline">View Attendance</span>
                       </Button>
-                      <Button variant="outline" size={isMobile ? "sm" : "default"}>
+                      <Button variant="outline" size={isMobile ? "sm" : "default"} className="bg-white/50 hover:bg-white">
                         <span className="hidden sm:inline">Details</span>
                         <span className="sm:hidden">View</span>
                       </Button>

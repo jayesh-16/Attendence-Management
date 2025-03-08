@@ -18,18 +18,18 @@ const Reports = () => {
   const stats = calculateAttendanceStats(attendanceRecords);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Reports</h1>
+        <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Reports</h1>
         <p className="text-muted-foreground mt-1">View attendance analytics and generate reports</p>
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-4 md:w-[400px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="classes">Classes</TabsTrigger>
-          <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
+        <TabsList className="grid grid-cols-4 md:w-[400px] bg-muted/50">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Overview</TabsTrigger>
+          <TabsTrigger value="classes" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Classes</TabsTrigger>
+          <TabsTrigger value="students" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Students</TabsTrigger>
+          <TabsTrigger value="trends" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Trends</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="animate-fade-in">

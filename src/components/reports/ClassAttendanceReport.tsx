@@ -50,8 +50,8 @@ const ClassAttendanceReport = ({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
+      <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+        <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
               <CardTitle>Class Attendance Report</CardTitle>
@@ -76,11 +76,11 @@ const ClassAttendanceReport = ({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="p-4 pb-2">
+              <Card className="overflow-hidden shadow-sm">
+                <CardHeader className="p-4 pb-2 bg-gradient-to-r from-green-500/10 to-green-500/5">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Present</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -89,8 +89,8 @@ const ClassAttendanceReport = ({
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader className="p-4 pb-2">
+              <Card className="overflow-hidden shadow-sm">
+                <CardHeader className="p-4 pb-2 bg-gradient-to-r from-red-500/10 to-red-500/5">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Absent</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -99,8 +99,8 @@ const ClassAttendanceReport = ({
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader className="p-4 pb-2">
+              <Card className="overflow-hidden shadow-sm">
+                <CardHeader className="p-4 pb-2 bg-gradient-to-r from-amber-500/10 to-amber-500/5">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Late</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -109,8 +109,8 @@ const ClassAttendanceReport = ({
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader className="p-4 pb-2">
+              <Card className="overflow-hidden shadow-sm">
+                <CardHeader className="p-4 pb-2 bg-gradient-to-r from-indigo-500/10 to-indigo-500/5">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Excused</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -120,10 +120,10 @@ const ClassAttendanceReport = ({
               </Card>
             </div>
             
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card className="overflow-hidden shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-primary/5 to-secondary/5">
                 <CardTitle className="text-base font-medium">Attendance Distribution</CardTitle>
-                <BarChartIcon className="h-4 w-4 text-muted-foreground" />
+                <BarChartIcon className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
