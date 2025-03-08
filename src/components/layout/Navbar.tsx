@@ -50,15 +50,15 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-10 w-full bg-background border-b border-border h-16 px-4 sm:px-6">
+    <nav className="sticky top-0 z-10 w-full bg-gradient-primary text-white shadow-md h-16 px-4 sm:px-6">
       <div className="h-full flex items-center justify-between">
         {/* Logo and Brand */}
         <div className="flex items-center">
           <div className="flex items-center gap-2 mr-8">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
               <Book size={18} />
             </div>
-            <h1 className="text-lg font-semibold text-foreground hidden sm:block">AttendTrack</h1>
+            <h1 className="text-lg font-semibold text-white hidden sm:block">AttendTrack</h1>
           </div>
 
           {/* Desktop Navigation */}
@@ -71,8 +71,8 @@ const Navbar = () => {
                   cn(
                     "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                     {
-                      "bg-accent text-accent-foreground": isActive,
-                      "hover:bg-accent/50 text-muted-foreground": !isActive,
+                      "bg-white/20 text-white": isActive,
+                      "hover:bg-white/10 text-white/80": !isActive,
                     }
                   )
                 }
@@ -89,7 +89,7 @@ const Navbar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:text-foreground relative"
+            className="text-white/90 hover:text-white hover:bg-white/10 relative"
           >
             <Bell size={20} />
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive animate-pulse"></span>
@@ -98,7 +98,7 @@ const Navbar = () => {
           {/* Mobile Navigation */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="md:hidden">
-              <Button variant="outline" size="sm" className="gap-1">
+              <Button variant="ghost" size="sm" className="gap-1 text-white hover:bg-white/10">
                 Menu <ChevronDown size={14} />
               </Button>
             </DropdownMenuTrigger>
@@ -121,10 +121,10 @@ const Navbar = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full" size="icon">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${getInitials()}`} />
-                  <AvatarFallback>{getInitials()}</AvatarFallback>
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full overflow-hidden hover:bg-white/10" size="icon">
+                <Avatar className="h-9 w-9 border-2 border-white/20">
+                  <AvatarImage src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${getInitials()}&background=random&color=fff`} />
+                  <AvatarFallback className="bg-purple-medium text-white">{getInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

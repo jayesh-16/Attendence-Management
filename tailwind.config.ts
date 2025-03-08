@@ -70,6 +70,18 @@ export default {
 				absent: '#ef4444',
 				late: '#f59e0b',
 				excused: '#6366f1',
+				purple: {
+					light: '#E5DEFF',
+					DEFAULT: '#8B5CF6',
+					medium: '#7E69AB',
+					dark: '#6E59A5',
+				},
+				blue: {
+					light: '#EDF2FE',
+					DEFAULT: '#3B82F6',
+					medium: '#1D4ED8',
+					dark: '#1E3A8A',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -105,6 +117,14 @@ export default {
 					'0%': { transform: 'translateX(-100%)', opacity: '0' },
 					'100%': { transform: 'translateX(0)', opacity: '1' },
 				},
+				'pulse': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5' },
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -114,6 +134,13 @@ export default {
 				'slide-in': 'slide-in 0.3s ease-out',
 				'scale-in': 'scale-in 0.2s ease-out',
 				'roll-in': 'roll-in 0.4s ease-out',
+				'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'float': 'float 3s ease-in-out infinite',
+			},
+			backgroundImage: {
+				'gradient-primary': 'linear-gradient(to right, #8B5CF6, #3B82F6)',
+				'gradient-secondary': 'linear-gradient(135deg, #7E69AB 0%, #3B82F6 100%)',
+				'gradient-card': 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
 			},
 		}
 	},

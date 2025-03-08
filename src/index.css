@@ -5,65 +5,83 @@
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 100% 99%;
+    --foreground: 240 10% 3.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 3.9%;
  
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 240 10% 3.9%;
  
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 250 86% 66%;
+    --primary-foreground: 0 0% 100%;
  
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 218 100% 60%;
+    --secondary-foreground: 0 0% 100%;
  
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
  
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 250 86% 96%;
+    --accent-foreground: 250 86% 66%;
  
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 250 86% 66%;
  
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    --sidebar-background: 250 86% 25%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 250 86% 25%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 250 86% 25%;
+    --sidebar-border: 250 86% 30%;
+    --sidebar-ring: 0 0% 100%;
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 230 25% 12%;
+    --foreground: 240 5% 98%;
  
-    --card: 222.2 84% 4.9%;
+    --card: 230 25% 15%;
     --card-foreground: 210 40% 98%;
  
-    --popover: 222.2 84% 4.9%;
+    --popover: 230 25% 15%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 250 86% 66%;
+    --primary-foreground: 0 0% 100%;
  
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 218 100% 60%;
+    --secondary-foreground: 0 0% 100%;
  
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 230 25% 20%;
+    --muted-foreground: 240 5% 65%;
  
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 230 25% 20%;
+    --accent-foreground: 240 5% 98%;
  
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
  
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 230 25% 20%;
+    --input: 230 25% 20%;
+    --ring: 250 86% 66%;
+
+    --sidebar-background: 250 86% 15%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 250 86% 15%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 250 86% 15%;
+    --sidebar-border: 250 86% 20%;
+    --sidebar-ring: 0 0% 100%;
   }
 }
  
@@ -124,6 +142,38 @@
   
   .progress-late .progress-indicator {
     @apply bg-amber-500;
+  }
+
+  /* Card styling */
+  .card-gradient {
+    @apply bg-gradient-card border border-border/40 shadow-sm;
+  }
+
+  .glass-card {
+    @apply bg-white/90 backdrop-blur-sm shadow-md border border-white/50 rounded-xl;
+  }
+
+  /* New UI Element Styles */
+  .purple-gradient-btn {
+    @apply bg-gradient-primary text-white font-medium py-2 px-4 rounded-md transition-all hover:shadow-md active:scale-95;
+  }
+
+  .glass-input {
+    @apply bg-white/80 backdrop-blur-sm border border-white/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/50 focus:outline-none;
+  }
+
+  .gradient-border {
+    @apply relative rounded-lg p-[1px] overflow-hidden;
+    background: linear-gradient(to right, #8B5CF6, #3B82F6);
+  }
+
+  .gradient-border::before {
+    @apply absolute inset-0 rounded-lg;
+    content: '';
+    background: linear-gradient(to right, #8B5CF6, #3B82F6);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
   }
 }
 

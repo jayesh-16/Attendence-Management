@@ -54,22 +54,24 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4 sm:p-6 md:p-8">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-light via-background to-blue-light p-4 sm:p-6 md:p-8">
       <div className="w-full max-w-md animate-fade-in">
         <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-white">
-              <Book size={24} />
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-20 h-20 rounded-xl bg-gradient-primary flex items-center justify-center text-white shadow-lg animate-float">
+              <Book size={40} />
             </div>
-            <h1 className="text-2xl font-bold">AttendTrack</h1>
+            <h1 className="text-3xl font-bold text-gradient bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">AttendTrack</h1>
+            <p className="text-muted-foreground text-sm">Attendance Management System</p>
           </div>
         </div>
         
-        <Card className="animate-scale-in">
+        <Card className="animate-scale-in overflow-hidden border-none shadow-xl relative glass-card">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-light/30 to-blue-light/20 pointer-events-none" />
           <CardHeader>
-            <CardTitle className="text-center text-2xl">Welcome to AttendTrack</CardTitle>
+            <CardTitle className="text-center text-2xl">Welcome Back</CardTitle>
             <CardDescription className="text-center">
-              The attendance management system for educational institutions
+              Sign in to your account to continue
             </CardDescription>
           </CardHeader>
           
@@ -125,7 +127,7 @@ const Auth = () => {
                 </CardContent>
                 
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={loginLoading}>
+                  <Button type="submit" className="w-full" variant="gradient" disabled={loginLoading}>
                     {loginLoading ? "Signing In..." : "Sign In"}
                   </Button>
                 </CardFooter>
@@ -206,7 +208,7 @@ const Auth = () => {
                 </CardContent>
                 
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={signupLoading}>
+                  <Button type="submit" className="w-full" variant="gradient" disabled={signupLoading}>
                     {signupLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </CardFooter>
