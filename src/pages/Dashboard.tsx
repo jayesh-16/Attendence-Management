@@ -6,91 +6,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Book, Clock, Users, Check, X, FileText, Search } from "lucide-react";
+import { Book, Clock, Users, Check, X, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { mockClasses, calculateAttendanceStats, generateAttendanceRecords } from "@/lib/mock-data";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [currentClass, setCurrentClass] = useState<string | null>("Mathematics 101");
+  const [selectedClassId, setSelectedClassId] = useState<string>(mockClasses[0]?.id || "");
   const currentDate = new Date();
   
-  // Mock data for classes
-  const classes = [
-    {
-      id: "math101",
-      name: "Mathematics 101",
-      grade: "Grade 10 - Room 203",
-      time: "9:00 AM - 10:30 AM",
-      students: 28
-    },
-    {
-      id: "physics",
-      name: "Physics",
-      grade: "Grade 11 - Lab 105",
-      time: "11:00 AM - 12:30 PM",
-      students: 24
-    },
-    {
-      id: "english",
-      name: "English Literature",
-      grade: "Grade 10 - Room 105",
-      time: "1:30 PM - 3:00 PM",
-      students: 30
-    }
-  ];
+  // Get class data and records
+  const selectedClass = mockClasses.find(cls => cls.id === selectedClassId) || mockClasses[0];
+  const attendanceRecords = selectedClass ? generateAttendanceRecords(selectedClass.id, selectedClass.students) : [];
+  const stats = calculateAttendanceStats(attendanceRecords);
   
-  // Mock data for students
-  const students = [
-    {
-      id: "1",
-      name: "Emma Thompson",
-      email: "emma.t@school.edu",
-      status: "absent",
-      avatarUrl: ""
-    },
-    {
-      id: "2",
-      name: "Liam Johnson",
-      email: "liam.j@school.edu",
-      status: "excused",
-      avatarUrl: ""
-    },
-    {
-      id: "3",
-      name: "Olivia Davis",
-      email: "olivia.d@school.edu",
-      status: "none",
-      avatarUrl: ""
-    },
-    {
-      id: "4",
-      name: "Noah Wilson",
-      email: "noah.w@school.edu",
-      status: "absent",
-      avatarUrl: ""
-    },
-    {
-      id: "5",
-      name: "Ava Martinez",
-      email: "ava.m@school.edu",
-      status: "excused",
-      avatarUrl: ""
-    }
-  ];
-  
-  // Attendance stats for the current class
-  const attendanceStats = {
-    total: 10,
-    present: 1,
-    absent: 2,
-    late: 2
-  };
+  // Mock students for the selected class with simplified status
+  const students = selectedClass ? selectedClass.students.slice(0, 5).map(student => ({
+    ...student,
+    status: ["present", "absent", "none"][Math.floor(Math.random() * 3)] as "present" | "absent" | "none"
+  })) : [];
   
   const handleTakeAttendance = (classId: string) => {
     navigate(`/attendance/${classId}/${format(currentDate, 'yyyy-MM-dd')}`);
+  };
+  
+  const handleClassSelect = (classId: string) => {
+    setSelectedClassId(classId);
   };
   
   const getStatusBadge = (status: string) => {
@@ -99,10 +43,6 @@ const Dashboard: React.FC = () => {
         return <Badge className="bg-green-500 hover:bg-green-600"><Check size={14} className="mr-1" /> Present</Badge>;
       case 'absent':
         return <Badge className="bg-red-500 hover:bg-red-600"><X size={14} className="mr-1" /> Absent</Badge>;
-      case 'late':
-        return <Badge className="bg-amber-500 hover:bg-amber-600"><Clock size={14} className="mr-1" /> Late</Badge>;
-      case 'excused':
-        return <Badge className="bg-blue-500 hover:bg-blue-600"><FileText size={14} className="mr-1" /> Excused</Badge>;
       default:
         return <Badge variant="outline">None</Badge>;
     }
@@ -135,8 +75,12 @@ const Dashboard: React.FC = () => {
         <TabsContent value="current-classes" className="space-y-6 mt-6">
           {/* Class cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {classes.map((cls) => (
-              <Card key={cls.id} className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-purple-light/30 hover-scale">
+            {mockClasses.map((cls) => (
+              <Card 
+                key={cls.id} 
+                className={`overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-purple-light/30 hover-scale cursor-pointer ${cls.id === selectedClassId ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => handleClassSelect(cls.id)}
+              >
                 <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-2">
                   <CardTitle className="text-xl">{cls.name}</CardTitle>
                   <p className="text-muted-foreground text-sm">{cls.grade}</p>
@@ -144,18 +88,21 @@ const Dashboard: React.FC = () => {
                 <CardContent className="space-y-3 pb-4">
                   <div className="flex items-center text-muted-foreground">
                     <Clock className="h-4 w-4 mr-2 text-primary" />
-                    <span className="text-sm">{cls.time}</span>
+                    <span className="text-sm">{cls.schedule}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Users className="h-4 w-4 mr-2 text-primary" />
-                      <span className="text-sm">Students: {cls.students}</span>
+                      <span className="text-sm">Students: {cls.students.length}</span>
                     </div>
                     
                     <Button 
                       variant="gradient"
-                      onClick={() => handleTakeAttendance(cls.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTakeAttendance(cls.id);
+                      }}
                       size={isMobile ? "sm" : "default"}
                     >
                       Take Attendance
@@ -166,29 +113,26 @@ const Dashboard: React.FC = () => {
             ))}
           </div>
           
-          {/* Current class detail */}
-          {currentClass && (
+          {/* Current class detail - render dynamically based on selected class */}
+          {selectedClass && (
             <Card className="animate-fade-in overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
               <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
-                <CardTitle>Current Class: {currentClass}</CardTitle>
+                <CardTitle>Current Class: {selectedClass.name}</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Mark students as present, absent, or late. Changes are saved automatically.
+                  Mark students as present or absent. Changes are saved automatically.
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="bg-background">
-                      Total: {attendanceStats.total}
+                      Total: {stats.total}
                     </Badge>
                     <Badge className="bg-green-500 hover:bg-green-600">
-                      Present: {attendanceStats.present}
+                      Present: {stats.present}
                     </Badge>
                     <Badge className="bg-red-500 hover:bg-red-600">
-                      Absent: {attendanceStats.absent}
-                    </Badge>
-                    <Badge className="bg-amber-500 hover:bg-amber-600">
-                      Late: {attendanceStats.late}
+                      Absent: {stats.absent}
                     </Badge>
                   </div>
                   
@@ -206,15 +150,14 @@ const Dashboard: React.FC = () => {
                 
                 <div className="border rounded-md overflow-hidden shadow-sm">
                   <div className="grid grid-cols-12 gap-4 p-3 border-b bg-gradient-to-r from-primary/5 to-secondary/5 font-medium">
-                    <div className="col-span-5 sm:col-span-4">Student</div>
-                    <div className="col-span-4 sm:col-span-3 text-center">Status</div>
+                    <div className="col-span-6 sm:col-span-7">Student</div>
+                    <div className="col-span-3 text-center">Status</div>
                     <div className="col-span-3 sm:col-span-2 text-center">Actions</div>
-                    <div className="hidden sm:block sm:col-span-3">Notes</div>
                   </div>
                   
                   {students.map((student) => (
                     <div key={student.id} className="grid grid-cols-12 gap-4 p-3 border-b items-center hover:bg-muted/20 transition-colors">
-                      <div className="col-span-5 sm:col-span-4 flex items-center gap-2 min-w-0">
+                      <div className="col-span-6 sm:col-span-7 flex items-center gap-2 min-w-0">
                         <Avatar className="h-8 w-8 flex-shrink-0 border border-primary/20">
                           <AvatarImage src={student.avatarUrl} />
                           <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-secondary/20">{student.name.substring(0, 2)}</AvatarFallback>
@@ -225,7 +168,7 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="col-span-4 sm:col-span-3 flex justify-center">
+                      <div className="col-span-3 flex justify-center">
                         {getStatusBadge(student.status)}
                       </div>
                       
@@ -236,10 +179,6 @@ const Dashboard: React.FC = () => {
                         <Button size="icon" variant="outline" className="h-8 w-8 rounded-full hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30">
                           <X className="h-4 w-4" />
                         </Button>
-                      </div>
-                      
-                      <div className="hidden sm:block sm:col-span-3">
-                        <Input placeholder="Add note..." className="h-8 text-sm" />
                       </div>
                     </div>
                   ))}
@@ -279,29 +218,12 @@ const Dashboard: React.FC = () => {
                     <div className="status-indicator bg-absent"></div>
                     <span className="text-sm font-medium">Absent</span>
                   </div>
-                  <span className="text-sm font-medium">15%</span>
+                  <span className="text-sm font-medium">25%</span>
                 </div>
                 <div className="relative h-2 bg-muted rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-red-500 transition-all"
-                    style={{ width: `15%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Late progress bar */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="status-indicator bg-late"></div>
-                    <span className="text-sm font-medium">Late</span>
-                  </div>
-                  <span className="text-sm font-medium">10%</span>
-                </div>
-                <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-amber-500 transition-all"
-                    style={{ width: `10%` }}
+                    style={{ width: `25%` }}
                   ></div>
                 </div>
               </div>

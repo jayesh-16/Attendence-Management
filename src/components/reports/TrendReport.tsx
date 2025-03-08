@@ -37,7 +37,7 @@ const TrendReport = ({ classes }: TrendReportProps) => {
   // Get all attendance records
   const allRecords = generateAttendanceRecords(classData.id, classData.students);
   
-  // Prepare data for the line chart
+  // Prepare data for the line chart - simplify to just present and absent
   const chartData = dates.map(date => {
     const dayRecords = allRecords.filter(record => record.date === date);
     const stats = calculateAttendanceStats(dayRecords);
@@ -47,8 +47,6 @@ const TrendReport = ({ classes }: TrendReportProps) => {
       date: format(new Date(date), "MMM dd"),
       present: Math.round((stats.present / total) * 100),
       absent: Math.round((stats.absent / total) * 100),
-      late: Math.round((stats.late / total) * 100),
-      excused: Math.round((stats.excused / total) * 100),
     };
   });
   
@@ -165,8 +163,6 @@ const TrendReport = ({ classes }: TrendReportProps) => {
                     <Legend />
                     <Line type="monotone" dataKey="present" stroke="#10b981" activeDot={{ r: 8 }} />
                     <Line type="monotone" dataKey="absent" stroke="#ef4444" />
-                    <Line type="monotone" dataKey="late" stroke="#f59e0b" />
-                    <Line type="monotone" dataKey="excused" stroke="#6366f1" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
