@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, Book } from "lucide-react";
 
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
@@ -59,7 +59,7 @@ const Auth = () => {
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-2">
             <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-white">
-              <span className="font-bold text-2xl">A+</span>
+              <Book size={24} />
             </div>
             <h1 className="text-2xl font-bold">AttendTrack</h1>
           </div>
