@@ -8,22 +8,18 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  ChevronLeft, 
-  Search, 
-  SaveAll
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { 
   mockClasses, 
   getStudentsWithAttendance 
 } from "@/lib/mock-data";
-import { format, parseISO } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
 import { AttendanceStatus } from "@/types";
-import StudentAttendanceRow from "@/components/attendance/StudentAttendanceRow";
+
+// Import refactored components
+import AttendanceHeader from "@/components/attendance/AttendanceHeader";
+import AttendanceActions from "@/components/attendance/AttendanceActions";
+import SearchBar from "@/components/attendance/SearchBar";
 import ClassDetailsCard from "@/components/attendance/ClassDetailsCard";
 import StudentsAttendanceList from "@/components/attendance/StudentsAttendanceList";
 import NoteDialog from "@/components/attendance/NoteDialog";
@@ -148,28 +144,9 @@ const AttendanceSession = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate("/attendance")}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{currentClass.name}</h1>
-            <p className="text-muted-foreground mt-1">
-              Attendance for {format(parseISO(date || ""), "EEEE, MMMM d, yyyy")}
-            </p>
-          </div>
-        </div>
+        <AttendanceHeader currentClass={currentClass} date={date || ""} />
         
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button onClick={saveAllAttendance} className="gap-2">
-            <SaveAll size={16} />
-            Save Attendance
-          </Button>
-        </div>
+        <AttendanceActions saveAllAttendance={saveAllAttendance} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -180,15 +157,10 @@ const AttendanceSession = () => {
                 <CardTitle>Student Attendance</CardTitle>
                 <Badge className="ml-2">{currentClass.students.length} Students</Badge>
               </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search students..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+              <SearchBar 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+              />
             </div>
           </CardHeader>
           <CardContent>
