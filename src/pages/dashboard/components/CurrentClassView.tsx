@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { mockClasses, calculateAttendanceStats, generateAttendanceRecords } from "@/lib/mock-data";
+import StudentsList from './StudentsList';
 
 interface CurrentClassViewProps {
   selectedClassId: string;
