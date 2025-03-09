@@ -1,11 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, X, Search } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { mockClasses, calculateAttendanceStats, generateAttendanceRecords } from "@/lib/mock-data";
 import StudentsList from './StudentsList';
 
@@ -14,32 +13,32 @@ interface CurrentClassViewProps {
 }
 
 const CurrentClassView: React.FC<CurrentClassViewProps> = ({ selectedClassId }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  
   // Get class data and records
   const selectedClass = mockClasses.find(cls => cls.id === selectedClassId) || mockClasses[0];
   const attendanceRecords = selectedClass ? generateAttendanceRecords(selectedClass.id, selectedClass.students) : [];
   const stats = calculateAttendanceStats(attendanceRecords);
   
   // Mock students for the selected class with simplified status
-  const students = selectedClass ? selectedClass.students.slice(0, 5).map(student => ({
+  const students = selectedClass ? selectedClass.students.map(student => ({
     ...student,
     status: ["present", "absent", "none"][Math.floor(Math.random() * 3)] as "present" | "absent" | "none"
   })) : [];
   
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'present':
-        return <Badge className="bg-green-500 hover:bg-green-600"><Check size={14} className="mr-1" /> Present</Badge>;
-      case 'absent':
-        return <Badge className="bg-red-500 hover:bg-red-600"><X size={14} className="mr-1" /> Absent</Badge>;
-      default:
-        return <Badge variant="outline">None</Badge>;
-    }
+  // Filter students based on search query
+  const filteredStudents = students.filter(student => 
+    searchQuery ? student.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+  );
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
   return (
     <Card className="animate-fade-in overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
       <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
-        <CardTitle>Current Class: {selectedClass.name}</CardTitle>
+        <CardTitle>Current Class: {selectedClass?.name || 'No Class Selected'}</CardTitle>
         <p className="text-muted-foreground text-sm">
           Mark students as present or absent. Changes are saved automatically.
         </p>
@@ -65,12 +64,18 @@ const CurrentClassView: React.FC<CurrentClassViewProps> = ({ selectedClassId }) 
                 type="search"
                 placeholder="Search students..."
                 className="pl-9 w-full"
+                value={searchQuery}
+                onChange={handleSearch}
               />
             </div>
           </div>
         </div>
         
-        <StudentsList students={students} />
+        <StudentsList 
+          students={filteredStudents}
+          onMarkPresent={(studentId) => console.log("Mark present:", studentId)}
+          onMarkAbsent={(studentId) => console.log("Mark absent:", studentId)}
+        />
       </CardContent>
     </Card>
   );
