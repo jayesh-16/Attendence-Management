@@ -78,7 +78,7 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
             <Label htmlFor="name">Subject Name</Label>
             <Input id="name" {...register("name")} />
             {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
+              <p className="text-sm text-red-500">{errors.name.message?.toString()}</p>
             )}
           </div>
           
@@ -86,7 +86,7 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
             <Label htmlFor="schedule">Schedule</Label>
             <Input id="schedule" {...register("schedule")} placeholder="e.g., Mon, Wed 10:00-11:30" />
             {errors.schedule && (
-              <p className="text-sm text-red-500">{errors.schedule.message}</p>
+              <p className="text-sm text-red-500">{errors.schedule.message?.toString()}</p>
             )}
           </div>
           
