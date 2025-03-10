@@ -39,7 +39,10 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
 
   const onSubmit = async (data: z.infer<typeof subjectSchema>) => {
     try {
-      // Use the current user's ID from auth context
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+
       const { error } = await supabase
         .from('classes')
         .insert({
@@ -47,7 +50,7 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
           description: data.description || null,
           schedule: data.schedule,
           grade: grade,
-          created_by: user?.id || "00000000-0000-0000-0000-000000000000" // Fallback to a valid UUID format
+          created_by: user.id,
         });
 
       if (error) throw error;
@@ -109,3 +112,4 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
 };
 
 export default SubjectDialog;
+
