@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const subjectSchema = z.object({
   name: z.string().min(1, "Subject name is required"),
@@ -31,13 +32,14 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
   onSuccess 
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
     resolver: zodResolver(subjectSchema),
   });
 
   const onSubmit = async (data: z.infer<typeof subjectSchema>) => {
     try {
-      // Add created_by field for supabase requirements
+      // Use the current user's ID from auth context
       const { error } = await supabase
         .from('classes')
         .insert({
@@ -45,7 +47,7 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
           description: data.description || null,
           schedule: data.schedule,
           grade: grade,
-          created_by: "system" // Use a default value for now, ideally this would come from auth context
+          created_by: user?.id || "00000000-0000-0000-0000-000000000000" // Fallback to a valid UUID format
         });
 
       if (error) throw error;
