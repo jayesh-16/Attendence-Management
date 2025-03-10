@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, X, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { mockClasses, calculateAttendanceStats, generateAttendanceRecords } from "@/lib/mock-data";
 import StudentsList from './StudentsList';
 
@@ -19,20 +19,14 @@ const CurrentClassView: React.FC<CurrentClassViewProps> = ({ selectedClassId }) 
   const selectedClass = mockClasses.find(cls => cls.id === selectedClassId) || mockClasses[0];
   const attendanceRecords = selectedClass ? generateAttendanceRecords(selectedClass.id, selectedClass.students) : [];
   const stats = calculateAttendanceStats(attendanceRecords);
-  
-  // Mock students for the selected class with simplified status
-  const students = selectedClass ? selectedClass.students.map(student => ({
-    ...student,
-    status: ["present", "absent", "none"][Math.floor(Math.random() * 3)] as "present" | "absent" | "none"
-  })) : [];
-  
-  // Filter students based on search query
-  const filteredStudents = students.filter(student => 
-    searchQuery ? student.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
-  );
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+  };
+
+  const handleStudentAdded = () => {
+    // In a real app, this would refresh the class data
+    console.log("Student added to class", selectedClassId);
   };
 
   return (
@@ -72,9 +66,11 @@ const CurrentClassView: React.FC<CurrentClassViewProps> = ({ selectedClassId }) 
         </div>
         
         <StudentsList 
-          students={filteredStudents}
+          classId={selectedClassId}
+          grade={selectedClass?.grade || ''}
           onMarkPresent={(studentId) => console.log("Mark present:", studentId)}
           onMarkAbsent={(studentId) => console.log("Mark absent:", studentId)}
+          onStudentAdded={handleStudentAdded}
         />
       </CardContent>
     </Card>

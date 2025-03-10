@@ -1,179 +1,103 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from "@/integrations/supabase/client";
+import { Calendar } from "lucide-react";
+import { mockClasses } from "@/lib/mock-data";
 import ClassesList from './ClassesList';
 import CurrentClassView from './CurrentClassView';
-import StatisticsView from './StatisticsView';
 import HistoryView from './HistoryView';
-import { Class } from "@/types";
-import SubjectDialog from './SubjectDialog';
+import StatisticsView from './StatisticsView';
 
 interface DashboardTabsProps {
   selectedClassId: string;
   onClassSelect: (classId: string) => void;
   onTakeAttendance: (classId: string) => void;
+  onGradeSelect?: (grade: string) => void;
 }
 
-const DashboardTabs: React.FC<DashboardTabsProps> = ({
-  selectedClassId,
-  onClassSelect,
-  onTakeAttendance
+const DashboardTabs: React.FC<DashboardTabsProps> = ({ 
+  selectedClassId, 
+  onClassSelect, 
+  onTakeAttendance,
+  onGradeSelect 
 }) => {
-  const [openAddSubject, setOpenAddSubject] = useState(false);
-  const [selectedGrade, setSelectedGrade] = useState("");
-
-  const { data: classesData = [], refetch: refetchClasses } = useQuery({
-    queryKey: ['classes'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('classes')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      
-      // Map to include empty students array to match Class type
-      return data.map(cls => ({
-        ...cls,
-        students: [] // Add empty students array to match Class type
-      })) as Class[];
-    },
-  });
-
-  // Handle successful subject addition
-  const handleAddSubjectSuccess = () => {
-    refetchClasses();
-    setOpenAddSubject(false);
+  const [activeTab, setActiveTab] = useState("current");
+  const [selectedGrade, setSelectedGrade] = useState<string>("SE MME");
+  
+  // Filtering classes by grade
+  const classesForGrade = mockClasses.filter(cls => cls.grade === selectedGrade);
+  
+  // Helper function for selecting grade
+  const handleGradeSelect = (grade: string) => {
+    setSelectedGrade(grade);
+    if (onGradeSelect) {
+      onGradeSelect(grade);
+    }
+    
+    // If the selected class is not in this grade, select the first class of this grade
+    const classInGrade = classesForGrade.find(cls => cls.id === selectedClassId);
+    if (!classInGrade && classesForGrade.length > 0) {
+      onClassSelect(classesForGrade[0].id);
+    }
   };
-
-  // Filter classes by grade
-  const seClasses = classesData.filter(cls => cls.grade === "SE MME");
-  const teClasses = classesData.filter(cls => cls.grade === "TE MME");
-  const beClasses = classesData.filter(cls => cls.grade === "BE MME");
-
-  const AddSubjectCard = ({ grade }: { grade: string }) => (
-    <div 
-      className="border rounded-lg p-6 text-center hover:bg-muted/10 transition-colors cursor-pointer"
-      onClick={() => {
-        setSelectedGrade(grade);
-        setOpenAddSubject(true);
-      }}
-    >
-      <Button variant="outline" className="gap-2">
-        <Plus className="h-4 w-4" />
-        Add Subject
-      </Button>
-      <p className="text-sm text-muted-foreground mt-2">Maximum 5 subjects per grade</p>
-    </div>
-  );
-
+  
   return (
-    <>
-      <Tabs defaultValue="se-mme" className="space-y-4">
-        <TabsList className="w-full max-w-md bg-muted/50">
-          <TabsTrigger value="se-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            SE MME
-          </TabsTrigger>
-          <TabsTrigger value="te-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            TE MME
-          </TabsTrigger>
-          <TabsTrigger value="be-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            BE MME
-          </TabsTrigger>
-          <TabsTrigger value="statistics" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            Statistics
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            History
-          </TabsTrigger>
+    <div className="space-y-6">
+      <Tabs defaultValue="SE MME" onValueChange={handleGradeSelect} value={selectedGrade}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="SE MME">SE MME</TabsTrigger>
+          <TabsTrigger value="TE MME">TE MME</TabsTrigger>
+          <TabsTrigger value="BE MME">BE MME</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="se-mme" className="space-y-6 mt-6">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">SE MME Subjects</h2>
-              <div className="grid gap-4">
-                {seClasses.length > 0 && (
-                  <ClassesList 
-                    classes={seClasses} 
-                    selectedClassId={selectedClassId} 
-                    onClassSelect={onClassSelect} 
-                    onTakeAttendance={onTakeAttendance} 
-                  />
-                )}
-                {seClasses.length < 5 && <AddSubjectCard grade="SE MME" />}
-                {seClasses.length === 0 && (
-                  <p className="text-muted-foreground">No SE MME subjects found. Add subjects to see them here.</p>
-                )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="md:col-span-1 border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+            <CardContent className="p-4">
+              <ClassesList 
+                classes={classesForGrade}
+                selectedClassId={selectedClassId}
+                onClassSelect={onClassSelect}
+              />
+              
+              <div className="mt-4">
+                <Button 
+                  variant="gradient" 
+                  className="w-full gap-2"
+                  onClick={() => onTakeAttendance(selectedClassId)}
+                >
+                  <Calendar className="h-4 w-4" />
+                  Take Attendance
+                </Button>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+          
+          <div className="md:col-span-3">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="current">Current</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+                <TabsTrigger value="statistics">Statistics</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="current" className="m-0">
+                <CurrentClassView selectedClassId={selectedClassId} />
+              </TabsContent>
+              
+              <TabsContent value="history" className="m-0">
+                <HistoryView selectedClassId={selectedClassId} />
+              </TabsContent>
+              
+              <TabsContent value="statistics" className="m-0">
+                <StatisticsView selectedClassId={selectedClassId} />
+              </TabsContent>
+            </Tabs>
           </div>
-        </TabsContent>
-
-        <TabsContent value="te-mme" className="space-y-6 mt-6">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">TE MME Subjects</h2>
-              <div className="grid gap-4">
-                {teClasses.length > 0 && (
-                  <ClassesList 
-                    classes={teClasses} 
-                    selectedClassId={selectedClassId} 
-                    onClassSelect={onClassSelect} 
-                    onTakeAttendance={onTakeAttendance} 
-                  />
-                )}
-                {teClasses.length < 5 && <AddSubjectCard grade="TE MME" />}
-                {teClasses.length === 0 && (
-                  <p className="text-muted-foreground">No TE MME subjects found. Add subjects to see them here.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="be-mme" className="space-y-6 mt-6">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">BE MME Subjects</h2>
-              <div className="grid gap-4">
-                {beClasses.length > 0 && (
-                  <ClassesList 
-                    classes={beClasses} 
-                    selectedClassId={selectedClassId} 
-                    onClassSelect={onClassSelect} 
-                    onTakeAttendance={onTakeAttendance} 
-                  />
-                )}
-                {beClasses.length < 5 && <AddSubjectCard grade="BE MME" />}
-                {beClasses.length === 0 && (
-                  <p className="text-muted-foreground">No BE MME subjects found. Add subjects to see them here.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="statistics">
-          <StatisticsView />
-        </TabsContent>
-
-        <TabsContent value="history">
-          <HistoryView />
-        </TabsContent>
+        </div>
       </Tabs>
-
-      <SubjectDialog 
-        open={openAddSubject} 
-        onOpenChange={setOpenAddSubject} 
-        grade={selectedGrade}
-        onSuccess={handleAddSubjectSuccess}
-      />
-    </>
+    </div>
   );
 };
 

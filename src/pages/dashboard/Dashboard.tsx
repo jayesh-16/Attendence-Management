@@ -1,45 +1,49 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Clock, UserPlus, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { mockClasses } from "@/lib/mock-data";
 import DashboardTabs from "./components/DashboardTabs";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import SubjectDialog from "./components/SubjectDialog";
+import StudentDialog from "./components/StudentDialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedClassId, setSelectedClassId] = useState<string>(mockClasses[0]?.id || "");
+  const [isAddingSubject, setIsAddingSubject] = useState(false);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [selectedGrade, setSelectedGrade] = useState<string>("SE MME");
   const currentDate = new Date();
   
-  // New state for forms
-  const [newStudentName, setNewStudentName] = useState("");
-  const [newStudentEmail, setNewStudentEmail] = useState("");
-  const [newStudentId, setNewStudentId] = useState("");
-  const [newStudentClass, setNewStudentClass] = useState("");
+  // Check session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        navigate('/auth');
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
   
-  const [newSubjectName, setNewSubjectName] = useState("");
-  const [newSubjectDescription, setNewSubjectDescription] = useState("");
-  const [newSubjectClass, setNewSubjectClass] = useState("");
-  const [newSubjectSchedule, setNewSubjectSchedule] = useState("");
+  // Set up auth state change listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/auth');
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [navigate]);
   
   const handleTakeAttendance = (classId: string) => {
     navigate(`/attendance/${classId}/${format(currentDate, 'yyyy-MM-dd')}`);
@@ -49,37 +53,25 @@ const Dashboard: React.FC = () => {
     setSelectedClassId(classId);
   };
 
-  const handleAddStudent = () => {
-    // In a real app, this would call an API to add the student
-    console.log("Adding student:", {
-      name: newStudentName,
-      email: newStudentEmail,
-      studentId: newStudentId,
-      classId: newSubjectClass
+  const handleSubjectAdded = () => {
+    toast({
+      title: "Success",
+      description: "Subject added successfully. Refreshing data...",
     });
-    
-    // Reset form
-    setNewStudentName("");
-    setNewStudentEmail("");
-    setNewStudentId("");
-    setNewStudentClass("");
+    // In a real app, you would refresh the class data here
   };
 
-  const handleAddSubject = () => {
-    // In a real app, this would call an API to add the subject
-    console.log("Adding subject:", {
-      name: newSubjectName,
-      description: newSubjectDescription,
-      grade: newSubjectClass,
-      schedule: newSubjectSchedule
+  const handleStudentAdded = () => {
+    toast({
+      title: "Success",
+      description: "Student added successfully. Refreshing data...",
     });
-    
-    // Reset form
-    setNewSubjectName("");
-    setNewSubjectDescription("");
-    setNewSubjectClass("");
-    setNewSubjectSchedule("");
+    // In a real app, you would refresh the student data here
   };
+
+  if (!user) {
+    return null; // Or a loading state
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -92,136 +84,23 @@ const Dashboard: React.FC = () => {
             <span>Today: {format(currentDate, 'M/d/yyyy')}</span>
           </div>
           
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Student</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Student Name</Label>
-                  <Input 
-                    id="name" 
-                    value={newStudentName} 
-                    onChange={(e) => setNewStudentName(e.target.value)} 
-                    placeholder="Enter student name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={newStudentEmail} 
-                    onChange={(e) => setNewStudentEmail(e.target.value)} 
-                    placeholder="Enter student email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="studentId">Student ID</Label>
-                  <Input 
-                    id="studentId" 
-                    value={newStudentId} 
-                    onChange={(e) => setNewStudentId(e.target.value)} 
-                    placeholder="Enter student ID"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="class">Class</Label>
-                  <Select value={newStudentClass} onValueChange={setNewStudentClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SE MME">SE MME</SelectItem>
-                      <SelectItem value="TE MME">TE MME</SelectItem>
-                      <SelectItem value="BE MME">BE MME</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  variant="gradient" 
-                  onClick={handleAddStudent}
-                  disabled={!newStudentName || !newStudentEmail || !newStudentId || !newStudentClass}
-                >
-                  Add Student
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="outline" 
+            className="gap-2" 
+            onClick={() => setIsAddingStudent(true)}
+          >
+            <UserPlus className="h-4 w-4" />
+            Add Student
+          </Button>
           
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <BookOpen className="h-4 w-4" />
-                Add Subject
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Subject</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="subjectName">Subject Name</Label>
-                  <Input 
-                    id="subjectName" 
-                    value={newSubjectName} 
-                    onChange={(e) => setNewSubjectName(e.target.value)} 
-                    placeholder="Enter subject name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea 
-                    id="description" 
-                    value={newSubjectDescription} 
-                    onChange={(e) => setNewSubjectDescription(e.target.value)} 
-                    placeholder="Enter subject description"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="schedule">Schedule</Label>
-                  <Input 
-                    id="schedule" 
-                    value={newSubjectSchedule} 
-                    onChange={(e) => setNewSubjectSchedule(e.target.value)} 
-                    placeholder="E.g., Mon, Wed, Fri 10:00-11:30"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="subjectClass">Class</Label>
-                  <Select value={newSubjectClass} onValueChange={setNewSubjectClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SE MME">SE MME</SelectItem>
-                      <SelectItem value="TE MME">TE MME</SelectItem>
-                      <SelectItem value="BE MME">BE MME</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  variant="gradient" 
-                  onClick={handleAddSubject}
-                  disabled={!newSubjectName || !newSubjectClass || !newSubjectSchedule}
-                >
-                  Add Subject
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="outline" 
+            className="gap-2" 
+            onClick={() => setIsAddingSubject(true)}
+          >
+            <BookOpen className="h-4 w-4" />
+            Add Subject
+          </Button>
           
           <Button variant="gradient" onClick={() => navigate('/attendance')} className="whitespace-nowrap">
             Take Attendance
@@ -233,6 +112,22 @@ const Dashboard: React.FC = () => {
         selectedClassId={selectedClassId} 
         onClassSelect={handleClassSelect} 
         onTakeAttendance={handleTakeAttendance}
+        onGradeSelect={setSelectedGrade}
+      />
+
+      {/* Dialogs */}
+      <StudentDialog 
+        open={isAddingStudent} 
+        onOpenChange={setIsAddingStudent}
+        grade={selectedGrade}
+        onSuccess={handleStudentAdded}
+      />
+      
+      <SubjectDialog 
+        open={isAddingSubject} 
+        onOpenChange={setIsAddingSubject}
+        grade={selectedGrade}
+        onSuccess={handleSubjectAdded}
       />
     </div>
   );
