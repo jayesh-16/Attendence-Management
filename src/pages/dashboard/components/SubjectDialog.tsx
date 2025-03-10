@@ -37,16 +37,16 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
 
   const onSubmit = async (data: z.infer<typeof subjectSchema>) => {
     try {
+      // Add created_by field for supabase requirements
       const { error } = await supabase
         .from('classes')
-        .insert([
-          {
-            name: data.name,
-            description: data.description,
-            schedule: data.schedule,
-            grade: grade,
-          }
-        ]);
+        .insert({
+          name: data.name,
+          description: data.description || null,
+          schedule: data.schedule,
+          grade: grade,
+          created_by: "system" // Use a default value for now, ideally this would come from auth context
+        });
 
       if (error) throw error;
 
