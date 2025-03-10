@@ -24,17 +24,19 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
   const beClasses = mockClasses.filter(cls => cls.grade === "BE MME");
 
   return (
-    <Tabs defaultValue="current-classes" className="space-y-4">
+    <Tabs defaultValue="se-mme" className="space-y-4">
       <TabsList className="w-full max-w-md bg-muted/50">
-        <TabsTrigger value="current-classes" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Current Classes</TabsTrigger>
+        <TabsTrigger value="se-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">SE MME</TabsTrigger>
+        <TabsTrigger value="te-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">TE MME</TabsTrigger>
+        <TabsTrigger value="be-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">BE MME</TabsTrigger>
         <TabsTrigger value="statistics" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">Statistics</TabsTrigger>
         <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">History</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="current-classes" className="space-y-6 mt-6">
+      <TabsContent value="se-mme" className="space-y-6 mt-6">
         <div className="space-y-8">
           <div>
-            <h2 className="text-2xl font-semibold mb-4">SE MME Classes</h2>
+            <h2 className="text-2xl font-semibold mb-4">SE MME Subjects</h2>
             {seClasses.length > 0 ? (
               <ClassesList 
                 classes={seClasses} 
@@ -43,12 +45,22 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                 onTakeAttendance={onTakeAttendance} 
               />
             ) : (
-              <p className="text-muted-foreground">No SE MME classes found. Add subjects to see them here.</p>
+              <p className="text-muted-foreground">No SE MME subjects found. Add subjects to see them here.</p>
             )}
           </div>
-          
+        </div>
+        
+        {selectedClassId && seClasses.some(cls => cls.id === selectedClassId) && (
+          <CurrentClassView 
+            selectedClassId={selectedClassId} 
+          />
+        )}
+      </TabsContent>
+      
+      <TabsContent value="te-mme" className="space-y-6 mt-6">
+        <div className="space-y-8">
           <div>
-            <h2 className="text-2xl font-semibold mb-4">TE MME Classes</h2>
+            <h2 className="text-2xl font-semibold mb-4">TE MME Subjects</h2>
             {teClasses.length > 0 ? (
               <ClassesList 
                 classes={teClasses} 
@@ -57,12 +69,22 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                 onTakeAttendance={onTakeAttendance} 
               />
             ) : (
-              <p className="text-muted-foreground">No TE MME classes found. Add subjects to see them here.</p>
+              <p className="text-muted-foreground">No TE MME subjects found. Add subjects to see them here.</p>
             )}
           </div>
-          
+        </div>
+        
+        {selectedClassId && teClasses.some(cls => cls.id === selectedClassId) && (
+          <CurrentClassView 
+            selectedClassId={selectedClassId} 
+          />
+        )}
+      </TabsContent>
+      
+      <TabsContent value="be-mme" className="space-y-6 mt-6">
+        <div className="space-y-8">
           <div>
-            <h2 className="text-2xl font-semibold mb-4">BE MME Classes</h2>
+            <h2 className="text-2xl font-semibold mb-4">BE MME Subjects</h2>
             {beClasses.length > 0 ? (
               <ClassesList 
                 classes={beClasses} 
@@ -71,12 +93,12 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                 onTakeAttendance={onTakeAttendance} 
               />
             ) : (
-              <p className="text-muted-foreground">No BE MME classes found. Add subjects to see them here.</p>
+              <p className="text-muted-foreground">No BE MME subjects found. Add subjects to see them here.</p>
             )}
           </div>
         </div>
         
-        {selectedClassId && (
+        {selectedClassId && beClasses.some(cls => cls.id === selectedClassId) && (
           <CurrentClassView 
             selectedClassId={selectedClassId} 
           />
