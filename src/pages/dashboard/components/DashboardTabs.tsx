@@ -59,6 +59,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                 classes={classesForGrade}
                 selectedClassId={selectedClassId}
                 onClassSelect={onClassSelect}
+                onTakeAttendance={onTakeAttendance}
               />
               
               <div className="mt-4">
