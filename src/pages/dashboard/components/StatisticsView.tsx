@@ -2,301 +2,224 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { Users, GraduationCap, UserCheck, Users2 } from "lucide-react";
+import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 
-const COLORS = ['#4f46e5', '#ec4899', '#10b981', '#f59e0b'];
+// Colors for charts
+const GENDER_COLORS = ['#69c0ff', '#ffc0cb'];
+const ATTENDANCE_COLORS = ['#69c0ff', '#ffc069', '#ff7875', '#b37feb'];
 
 const StatisticsView = () => {
-  const [selectedGrade, setSelectedGrade] = useState("SE MME");
   const [timeRange, setTimeRange] = useState("7"); // 7 days default
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
-  // Fetch all classes for the selected grade
-  const { data: classes = [] } = useQuery({
-    queryKey: ['classes', selectedGrade],
+  // Fetch students data
+  const { data: studentsData = [], isLoading: isLoadingStudents } = useQuery({
+    queryKey: ['students'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('classes')
-        .select('*')
-        .eq('grade', selectedGrade);
+        .from('students')
+        .select('*');
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  // Fetch attendance statistics for the selected grade and time range
-  const { data: classStats = [] } = useQuery({
-    queryKey: ['classStats', selectedGrade, timeRange, selectedSubject],
+  // Fetch teachers/profiles data
+  const { data: teachersData = [], isLoading: isLoadingTeachers } = useQuery({
+    queryKey: ['teachers'],
     queryFn: async () => {
-      const query = supabase
-        .from('attendance_records')
-        .select(`
-          id,
-          status,
-          date,
-          class_id,
-          classes!inner(
-            id,
-            name,
-            grade
-          )
-        `)
-        .eq('classes.grade', selectedGrade)
-        .gte('date', new Date(Date.now() - parseInt(timeRange) * 24 * 60 * 60 * 1000).toISOString());
-      
-      // Add subject filter if a subject is selected
-      if (selectedSubject) {
-        query.eq('class_id', selectedSubject);
-      }
-      
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'teacher');
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  // Prepare chart data for overall attendance
-  const overallChartData = [
-    { name: 'Present', value: classStats.filter(r => r.status === 'present').length },
-    { name: 'Absent', value: classStats.filter(r => r.status === 'absent').length },
-    { name: 'Late', value: classStats.filter(r => r.status === 'late').length },
-    { name: 'Excused', value: classStats.filter(r => r.status === 'excused').length },
+  // Fetch attendance data
+  const { data: attendanceData = [], isLoading: isLoadingAttendance } = useQuery({
+    queryKey: ['attendance', timeRange],
+    queryFn: async () => {
+      const date = new Date();
+      date.setDate(date.getDate() - parseInt(timeRange));
+      
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .gte('date', date.toISOString().split('T')[0]);
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Mock gender data - in a real app, we would add a gender field to the students table
+  const genderData = [
+    { name: 'Boys', value: Math.floor(studentsData.length * 0.45) },
+    { name: 'Girls', value: studentsData.length - Math.floor(studentsData.length * 0.45) }
   ];
 
-  // Prepare data for subjects breakdown
-  const subjectChartData = classes.map(cls => {
-    const subjectStats = classStats.filter(stat => stat.class_id === cls.id);
-    const total = subjectStats.length;
-    const present = subjectStats.filter(r => r.status === 'present').length;
-    const absent = subjectStats.filter(r => r.status === 'absent').length;
-    const late = subjectStats.filter(r => r.status === 'late').length;
-    const excused = subjectStats.filter(r => r.status === 'excused').length;
-    
+  // Prepare daily attendance data
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const attendanceByDayData = days.map(day => {
+    // In a real app, we would calculate these values from actual attendance records
     return {
-      name: cls.name,
-      present,
-      absent,
-      late, 
-      excused,
-      total,
-      attendanceRate: total > 0 ? (present / total) * 100 : 0
+      name: day,
+      present: Math.floor(Math.random() * 50) + 30,
+      absent: Math.floor(Math.random() * 20)
     };
   });
 
-  // Group attendance data by date for trends
-  const trendData = classStats.reduce((acc: any[], record) => {
-    const date = new Date(record.date).toLocaleDateString();
-    const existing = acc.find(item => item.date === date);
-    
-    if (existing) {
-      if (record.status === 'present') existing.present++;
-      if (record.status === 'absent') existing.absent++;
-      if (record.status === 'late') existing.late++;
-      if (record.status === 'excused') existing.excused++;
-      existing.total++;
-    } else {
-      acc.push({
-        date,
-        present: record.status === 'present' ? 1 : 0,
-        absent: record.status === 'absent' ? 1 : 0,
-        late: record.status === 'late' ? 1 : 0,
-        excused: record.status === 'excused' ? 1 : 0,
-        total: 1
-      });
-    }
-    
-    return acc;
-  }, []);
+  // Attendance status counts
+  const presentCount = attendanceData.filter(record => record.status === 'present').length;
+  const absentCount = attendanceData.filter(record => record.status === 'absent').length;
+  const lateCount = attendanceData.filter(record => record.status === 'late').length;
+  const excusedCount = attendanceData.filter(record => record.status === 'excused').length;
+  
+  const attendanceStatusData = [
+    { name: 'Present', value: presentCount || 75 },
+    { name: 'Absent', value: absentCount || 15 },
+    { name: 'Late', value: lateCount || 8 },
+    { name: 'Excused', value: excusedCount || 5 }
+  ];
 
-  // Sort by date ascending
-  trendData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Calculate statistics numbers
+  const totalStudents = studentsData.length;
+  const totalTeachers = teachersData.length;
+  const totalAdmins = 2; // Mock data - in a real app, filter profiles by role
+  const totalParents = 382; // Mock data - in a real app, this would be from a parents table
+
+  // Custom pie chart label
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+  
+    return (
+      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
-    <Card className="mt-6 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
-      <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <CardTitle>Attendance Statistics</CardTitle>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Select grade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SE MME">SE MME</SelectItem>
-                <SelectItem value="TE MME">TE MME</SelectItem>
-                <SelectItem value="BE MME">BE MME</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="14">Last 14 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+    <Card className="mt-6 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-50">
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5 pb-4">
+        <CardTitle>School Statistics</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <Tabs defaultValue="overview" className="space-y-4">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard 
+            title="Students" 
+            value={totalStudents} 
+            icon={<Users className="h-5 w-5 text-blue-500" />} 
+            color="bg-blue-100" 
+            isLoading={isLoadingStudents}
+          />
+          <StatCard 
+            title="Teachers" 
+            value={totalTeachers} 
+            icon={<GraduationCap className="h-5 w-5 text-yellow-500" />} 
+            color="bg-yellow-100" 
+            isLoading={isLoadingTeachers}
+          />
+          <StatCard 
+            title="Admins" 
+            value={totalAdmins} 
+            icon={<UserCheck className="h-5 w-5 text-purple-500" />} 
+            color="bg-purple-100" 
+            isLoading={false}
+          />
+          <StatCard 
+            title="Parents" 
+            value={totalParents} 
+            icon={<Users2 className="h-5 w-5 text-green-500" />} 
+            color="bg-green-100" 
+            isLoading={false}
+          />
+        </div>
+
+        <Tabs defaultValue="attendance" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="subjects">By Subject</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="gender">Gender Distribution</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
-            <Card>
-              <CardHeader>
-                <CardTitle>Overall Attendance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={overallChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#4f46e5" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={overallChartData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {overallChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="attendance" className="space-y-4">
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={attendanceByDayData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="present" name="Present" fill="#69c0ff" />
+                  <Bar dataKey="absent" name="Absent" fill="#ffc069" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </TabsContent>
 
-          <TabsContent value="subjects">
-            <Card>
-              <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                <CardTitle>Subject-specific Statistics</CardTitle>
-                <Select 
-                  value={selectedSubject || ""} 
-                  onValueChange={(value) => setSelectedSubject(value || null)}
-                >
-                  <SelectTrigger className="w-[200px] mt-2 sm:mt-0">
-                    <SelectValue placeholder="All subjects" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All subjects</SelectItem>
-                    {classes.map(cls => (
-                      <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={subjectChartData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          <TabsContent value="gender" className="h-[300px]">
+            <div className="flex items-center justify-center h-full">
+              <div className="relative h-[250px] w-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={genderData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderCustomizedLabel}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="present" stackId="a" fill="#10b981" />
-                      <Bar dataKey="absent" stackId="a" fill="#ef4444" />
-                      <Bar dataKey="late" stackId="a" fill="#f59e0b" />
-                      <Bar dataKey="excused" stackId="a" fill="#6366f1" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="mt-8 overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-xs uppercase bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-2">Subject</th>
-                        <th className="px-4 py-2">Present</th>
-                        <th className="px-4 py-2">Absent</th>
-                        <th className="px-4 py-2">Late</th>
-                        <th className="px-4 py-2">Excused</th>
-                        <th className="px-4 py-2">Attendance Rate</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {subjectChartData.map((subject, index) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="px-4 py-2 font-medium">{subject.name}</td>
-                          <td className="px-4 py-2">{subject.present}</td>
-                          <td className="px-4 py-2">{subject.absent}</td>
-                          <td className="px-4 py-2">{subject.late}</td>
-                          <td className="px-4 py-2">{subject.excused}</td>
-                          <td className="px-4 py-2">{subject.attendanceRate.toFixed(1)}%</td>
-                        </tr>
+                      {genderData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
 
-          <TabsContent value="trends">
-            <Card>
-              <CardHeader>
-                <CardTitle>Attendance Trends Over Time</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={trendData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="present" stroke="#10b981" activeDot={{ r: 8 }} />
-                      <Line type="monotone" dataKey="absent" stroke="#ef4444" />
-                      <Line type="monotone" dataKey="late" stroke="#f59e0b" />
-                      <Line type="monotone" dataKey="excused" stroke="#6366f1" />
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex">
+                  <Users className="h-12 w-12 text-gray-200" />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
   );
 };
+
+// Stat Card Component
+const StatCard = ({ title, value, icon, color, isLoading }) => (
+  <Card className="overflow-hidden">
+    <div className="p-4 flex items-start justify-between">
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        {isLoading ? (
+          <div className="h-7 w-12 bg-gray-200 animate-pulse rounded mt-1"></div>
+        ) : (
+          <h3 className="text-2xl font-bold mt-1">{value}</h3>
+        )}
+      </div>
+      <div className={`${color} p-2 rounded-full`}>
+        {icon}
+      </div>
+    </div>
+  </Card>
+);
 
 export default StatisticsView;

@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Clock, UserPlus, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { mockClasses } from "@/lib/mock-data";
 import DashboardTabs from "./components/DashboardTabs";
 import { 
   Dialog, 
@@ -24,10 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedClassId, setSelectedClassId] = useState<string>(mockClasses[0]?.id || "");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
   const currentDate = new Date();
   
   // New state for forms
@@ -41,6 +43,24 @@ const Dashboard: React.FC = () => {
   const [newSubjectClass, setNewSubjectClass] = useState("");
   const [newSubjectSchedule, setNewSubjectSchedule] = useState("");
   
+  // Fetch classes data
+  const { data: classesData = [] } = useQuery({
+    queryKey: ['dashboardClasses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        toast.error('Failed to load classes');
+        throw error;
+      }
+      
+      return data;
+    },
+  });
+  
   const handleTakeAttendance = (classId: string) => {
     navigate(`/attendance/${classId}/${format(currentDate, 'yyyy-MM-dd')}`);
   };
@@ -49,47 +69,106 @@ const Dashboard: React.FC = () => {
     setSelectedClassId(classId);
   };
 
-  const handleAddStudent = () => {
-    // In a real app, this would call an API to add the student
-    console.log("Adding student:", {
-      name: newStudentName,
-      email: newStudentEmail,
-      studentId: newStudentId,
-      classId: newSubjectClass
-    });
-    
-    // Reset form
-    setNewStudentName("");
-    setNewStudentEmail("");
-    setNewStudentId("");
-    setNewStudentClass("");
+  const handleAddStudent = async () => {
+    try {
+      // Get the auth user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('You need to be logged in to add a student');
+        return;
+      }
+      
+      // Add the student to the database
+      const { data, error } = await supabase
+        .from('students')
+        .insert({
+          name: newStudentName,
+          email: newStudentEmail,
+          student_id: newStudentId,
+          created_by: user.id
+        })
+        .select();
+      
+      if (error) {
+        toast.error('Failed to add student: ' + error.message);
+        return;
+      }
+      
+      // If a class was selected, add the student to the class
+      if (newStudentClass && data[0]) {
+        const { error: enrollmentError } = await supabase
+          .from('class_students')
+          .insert({
+            class_id: newStudentClass,
+            student_id: data[0].id
+          });
+        
+        if (enrollmentError) {
+          toast.error('Failed to add student to class: ' + enrollmentError.message);
+          return;
+        }
+      }
+      
+      toast.success('Student added successfully!');
+      
+      // Reset form
+      setNewStudentName("");
+      setNewStudentEmail("");
+      setNewStudentId("");
+      setNewStudentClass("");
+    } catch (error) {
+      toast.error('An error occurred: ' + error.message);
+    }
   };
 
-  const handleAddSubject = () => {
-    // In a real app, this would call an API to add the subject
-    console.log("Adding subject:", {
-      name: newSubjectName,
-      description: newSubjectDescription,
-      grade: newSubjectClass,
-      schedule: newSubjectSchedule
-    });
-    
-    // Reset form
-    setNewSubjectName("");
-    setNewSubjectDescription("");
-    setNewSubjectClass("");
-    setNewSubjectSchedule("");
+  const handleAddSubject = async () => {
+    try {
+      // Get the auth user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('You need to be logged in to add a subject');
+        return;
+      }
+      
+      // Add the subject to the database
+      const { data, error } = await supabase
+        .from('classes')
+        .insert({
+          name: newSubjectName,
+          description: newSubjectDescription,
+          grade: newSubjectClass,
+          schedule: newSubjectSchedule,
+          created_by: user.id
+        });
+      
+      if (error) {
+        toast.error('Failed to add subject: ' + error.message);
+        return;
+      }
+      
+      toast.success('Subject added successfully!');
+      
+      // Reset form
+      setNewSubjectName("");
+      setNewSubjectDescription("");
+      setNewSubjectClass("");
+      setNewSubjectSchedule("");
+    } catch (error) {
+      toast.error('An error occurred: ' + error.message);
+    }
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">MME-AT-TRACKING</h1>
+        <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
         
         <div className="flex items-center flex-wrap gap-4">
           <div className="flex items-center">
             <Clock className="mr-2 h-5 w-5 text-primary" />
-            <span>Today: {format(currentDate, 'M/d/yyyy')}</span>
+            <span>Today: {format(currentDate, 'MMM d, yyyy')}</span>
           </div>
           
           <Dialog>
@@ -139,18 +218,19 @@ const Dashboard: React.FC = () => {
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SE MME">SE MME</SelectItem>
-                      <SelectItem value="TE MME">TE MME</SelectItem>
-                      <SelectItem value="BE MME">BE MME</SelectItem>
+                      {classesData.map(cls => (
+                        <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <DialogFooter>
                 <Button 
-                  variant="gradient" 
+                  variant="default"
                   onClick={handleAddStudent}
-                  disabled={!newStudentName || !newStudentEmail || !newStudentId || !newStudentClass}
+                  disabled={!newStudentName || !newStudentId}
+                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                 >
                   Add Student
                 </Button>
@@ -213,9 +293,10 @@ const Dashboard: React.FC = () => {
               </div>
               <DialogFooter>
                 <Button 
-                  variant="gradient" 
+                  variant="default"
                   onClick={handleAddSubject}
                   disabled={!newSubjectName || !newSubjectClass || !newSubjectSchedule}
+                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                 >
                   Add Subject
                 </Button>
@@ -223,7 +304,11 @@ const Dashboard: React.FC = () => {
             </DialogContent>
           </Dialog>
           
-          <Button variant="gradient" onClick={() => navigate('/attendance')} className="whitespace-nowrap">
+          <Button 
+            variant="default" 
+            onClick={() => navigate('/attendance')} 
+            className="whitespace-nowrap bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+          >
             Take Attendance
           </Button>
         </div>

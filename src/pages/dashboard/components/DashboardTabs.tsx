@@ -11,6 +11,7 @@ import StatisticsView from './StatisticsView';
 import HistoryView from './HistoryView';
 import { Class } from "@/types";
 import SubjectDialog from './SubjectDialog';
+import { toast } from "sonner";
 
 interface DashboardTabsProps {
   selectedClassId: string;
@@ -26,20 +27,27 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
   const [openAddSubject, setOpenAddSubject] = useState(false);
   const [selectedGrade, setSelectedGrade] = useState("");
 
-  const { data: classesData = [], refetch: refetchClasses } = useQuery({
+  const { data: classesData = [], isLoading: isLoadingClasses, refetch: refetchClasses } = useQuery({
     queryKey: ['classes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*')
-        .order('name');
+        .select(`
+          *,
+          students:class_students!inner(
+            student:students(*)
+          )
+        `);
       
-      if (error) throw error;
+      if (error) {
+        toast.error('Failed to load classes: ' + error.message);
+        throw error;
+      }
       
-      // Map to include empty students array to match Class type
+      // Transform data to match Class type
       return data.map(cls => ({
         ...cls,
-        students: [] // Add empty students array to match Class type
+        students: cls.students?.map(s => s.student) || []
       })) as Class[];
     },
   });
@@ -48,6 +56,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
   const handleAddSubjectSuccess = () => {
     refetchClasses();
     setOpenAddSubject(false);
+    toast.success('Subject added successfully!');
   };
 
   // Filter classes by grade
@@ -57,7 +66,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 
   const AddSubjectCard = ({ grade }: { grade: string }) => (
     <div 
-      className="border rounded-lg p-6 text-center hover:bg-muted/10 transition-colors cursor-pointer"
+      className="border rounded-lg p-6 text-center hover:bg-muted/10 transition-colors cursor-pointer shadow-sm hover:shadow-md"
       onClick={() => {
         setSelectedGrade(grade);
         setOpenAddSubject(true);
@@ -73,96 +82,129 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 
   return (
     <>
-      <Tabs defaultValue="se-mme" className="space-y-4">
-        <TabsList className="w-full max-w-md bg-muted/50">
-          <TabsTrigger value="se-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            SE MME
-          </TabsTrigger>
-          <TabsTrigger value="te-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            TE MME
-          </TabsTrigger>
-          <TabsTrigger value="be-mme" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            BE MME
-          </TabsTrigger>
-          <TabsTrigger value="statistics" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
+      <Tabs defaultValue="statistics" className="space-y-4">
+        <TabsList className="w-full bg-muted/30 p-1">
+          <TabsTrigger 
+            value="statistics" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
+          >
             Statistics
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-gradient-primary data-[state=active]:text-white">
-            History
+          <TabsTrigger 
+            value="se-mme" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
+          >
+            SE MME
+          </TabsTrigger>
+          <TabsTrigger 
+            value="te-mme" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
+          >
+            TE MME
+          </TabsTrigger>
+          <TabsTrigger 
+            value="be-mme" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
+          >
+            BE MME
+          </TabsTrigger>
+          <TabsTrigger 
+            value="calendar" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
+          >
+            Calendar
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="se-mme" className="space-y-6 mt-6">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">SE MME Subjects</h2>
-              <div className="grid gap-4">
-                {seClasses.length > 0 && (
-                  <ClassesList 
-                    classes={seClasses} 
-                    selectedClassId={selectedClassId} 
-                    onClassSelect={onClassSelect} 
-                    onTakeAttendance={onTakeAttendance} 
-                  />
-                )}
-                {seClasses.length < 5 && <AddSubjectCard grade="SE MME" />}
-                {seClasses.length === 0 && (
-                  <p className="text-muted-foreground">No SE MME subjects found. Add subjects to see them here.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="te-mme" className="space-y-6 mt-6">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">TE MME Subjects</h2>
-              <div className="grid gap-4">
-                {teClasses.length > 0 && (
-                  <ClassesList 
-                    classes={teClasses} 
-                    selectedClassId={selectedClassId} 
-                    onClassSelect={onClassSelect} 
-                    onTakeAttendance={onTakeAttendance} 
-                  />
-                )}
-                {teClasses.length < 5 && <AddSubjectCard grade="TE MME" />}
-                {teClasses.length === 0 && (
-                  <p className="text-muted-foreground">No TE MME subjects found. Add subjects to see them here.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="be-mme" className="space-y-6 mt-6">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">BE MME Subjects</h2>
-              <div className="grid gap-4">
-                {beClasses.length > 0 && (
-                  <ClassesList 
-                    classes={beClasses} 
-                    selectedClassId={selectedClassId} 
-                    onClassSelect={onClassSelect} 
-                    onTakeAttendance={onTakeAttendance} 
-                  />
-                )}
-                {beClasses.length < 5 && <AddSubjectCard grade="BE MME" />}
-                {beClasses.length === 0 && (
-                  <p className="text-muted-foreground">No BE MME subjects found. Add subjects to see them here.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
 
         <TabsContent value="statistics">
           <StatisticsView />
         </TabsContent>
 
-        <TabsContent value="history">
+        <TabsContent value="se-mme" className="space-y-6 mt-6 animate-fade-in">
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">SE MME Subjects</h2>
+              <div className="grid gap-4">
+                {isLoadingClasses ? (
+                  <div className="text-center py-8">Loading subjects...</div>
+                ) : (
+                  <>
+                    {seClasses.length > 0 && (
+                      <ClassesList 
+                        classes={seClasses} 
+                        selectedClassId={selectedClassId} 
+                        onClassSelect={onClassSelect} 
+                        onTakeAttendance={onTakeAttendance} 
+                      />
+                    )}
+                    {seClasses.length < 5 && <AddSubjectCard grade="SE MME" />}
+                    {seClasses.length === 0 && !isLoadingClasses && (
+                      <p className="text-muted-foreground">No SE MME subjects found. Add subjects to see them here.</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="te-mme" className="space-y-6 mt-6 animate-fade-in">
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">TE MME Subjects</h2>
+              <div className="grid gap-4">
+                {isLoadingClasses ? (
+                  <div className="text-center py-8">Loading subjects...</div>
+                ) : (
+                  <>
+                    {teClasses.length > 0 && (
+                      <ClassesList 
+                        classes={teClasses} 
+                        selectedClassId={selectedClassId} 
+                        onClassSelect={onClassSelect} 
+                        onTakeAttendance={onTakeAttendance} 
+                      />
+                    )}
+                    {teClasses.length < 5 && <AddSubjectCard grade="TE MME" />}
+                    {teClasses.length === 0 && !isLoadingClasses && (
+                      <p className="text-muted-foreground">No TE MME subjects found. Add subjects to see them here.</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="be-mme" className="space-y-6 mt-6 animate-fade-in">
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">BE MME Subjects</h2>
+              <div className="grid gap-4">
+                {isLoadingClasses ? (
+                  <div className="text-center py-8">Loading subjects...</div>
+                ) : (
+                  <>
+                    {beClasses.length > 0 && (
+                      <ClassesList 
+                        classes={beClasses} 
+                        selectedClassId={selectedClassId} 
+                        onClassSelect={onClassSelect} 
+                        onTakeAttendance={onTakeAttendance} 
+                      />
+                    )}
+                    {beClasses.length < 5 && <AddSubjectCard grade="BE MME" />}
+                    {beClasses.length === 0 && !isLoadingClasses && (
+                      <p className="text-muted-foreground">No BE MME subjects found. Add subjects to see them here.</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="calendar">
           <HistoryView />
         </TabsContent>
       </Tabs>

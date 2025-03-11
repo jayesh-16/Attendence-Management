@@ -1,71 +1,90 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, UserCheck, Mail, Phone, Check, X, Clock, FileText } from "lucide-react";
+import { Search, UserPlus, UserCheck, Mail, Phone, Check, X, Clock, Edit, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Mock student data
-const mockStudents = [
-  {
-    id: "1",
-    name: "Emma Thompson",
-    email: "emma.t@school.edu",
-    phone: "555-123-4567",
-    grade: "Grade 10",
-    attendanceRate: 92,
-    avatar: ""
-  },
-  {
-    id: "2",
-    name: "Liam Johnson",
-    email: "liam.j@school.edu",
-    phone: "555-234-5678",
-    grade: "Grade 11",
-    attendanceRate: 85,
-    avatar: ""
-  },
-  {
-    id: "3",
-    name: "Olivia Davis",
-    email: "olivia.d@school.edu",
-    phone: "555-345-6789",
-    grade: "Grade 10",
-    attendanceRate: 98,
-    avatar: ""
-  },
-  {
-    id: "4",
-    name: "Noah Wilson",
-    email: "noah.w@school.edu",
-    phone: "555-456-7890",
-    grade: "Grade 11",
-    attendanceRate: 78,
-    avatar: ""
-  },
-  {
-    id: "5",
-    name: "Ava Martinez",
-    email: "ava.m@school.edu",
-    phone: "555-567-8901",
-    grade: "Grade 10",
-    attendanceRate: 90,
-    avatar: ""
-  },
-];
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Students = () => {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  
+  // New state for student form
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentId, setNewStudentId] = useState("");
+  const [newStudentClass, setNewStudentClass] = useState("");
+  const [newStudentGender, setNewStudentGender] = useState("");
+  
+  // Fetch students data
+  const { data: studentsData = [], isLoading: isLoadingStudents, refetch: refetchStudents } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*, classes:class_students(class:classes(*))');
+      
+      if (error) {
+        toast.error('Failed to load students: ' + error.message);
+        throw error;
+      }
+      
+      return data;
+    },
+  });
+  
+  // Fetch classes for dropdown
+  const { data: classesData = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        toast.error('Failed to load classes: ' + error.message);
+        throw error;
+      }
+      
+      return data;
+    },
+  });
   
   // Filter students based on search query
-  const filteredStudents = mockStudents.filter(student => 
+  const filteredStudents = studentsData.filter(student => 
     student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.grade.toLowerCase().includes(searchQuery.toLowerCase())
+    student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.student_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   // Get attendance status indicator
@@ -75,22 +94,106 @@ const Students = () => {
     return { color: "bg-red-500", icon: <X className="h-4 w-4" />, label: "Needs Improvement" };
   };
   
+  const resetForm = () => {
+    setNewStudentName("");
+    setNewStudentEmail("");
+    setNewStudentId("");
+    setNewStudentClass("");
+    setNewStudentGender("");
+  };
+  
+  const handleAddStudent = async () => {
+    try {
+      // Get the auth user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('You need to be logged in to add a student');
+        return;
+      }
+      
+      // Add the student to the database
+      const { data, error } = await supabase
+        .from('students')
+        .insert({
+          name: newStudentName,
+          email: newStudentEmail,
+          student_id: newStudentId,
+          gender: newStudentGender,
+          created_by: user.id
+        })
+        .select();
+      
+      if (error) {
+        toast.error('Failed to add student: ' + error.message);
+        return;
+      }
+      
+      // If a class was selected, add the student to the class
+      if (newStudentClass && data[0]) {
+        const { error: enrollmentError } = await supabase
+          .from('class_students')
+          .insert({
+            class_id: newStudentClass,
+            student_id: data[0].id
+          });
+        
+        if (enrollmentError) {
+          toast.error('Failed to add student to class: ' + enrollmentError.message);
+          return;
+        }
+      }
+      
+      toast.success('Student added successfully!');
+      refetchStudents();
+      setIsAddStudentOpen(false);
+      resetForm();
+      
+    } catch (error) {
+      toast.error('An error occurred: ' + error.message);
+    }
+  };
+  
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', studentId);
+      
+      if (error) {
+        toast.error('Failed to delete student: ' + error.message);
+        return;
+      }
+      
+      toast.success('Student deleted successfully!');
+      refetchStudents();
+      
+    } catch (error) {
+      toast.error('An error occurred: ' + error.message);
+    }
+  };
+  
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Students</h1>
+          <h1 className="text-3xl font-bold text-primary">Students</h1>
           <p className="text-muted-foreground mt-1">Manage student data and attendance records</p>
         </div>
         
-        <Button variant="gradient" className="gap-2">
+        <Button 
+          variant="default" 
+          className="gap-2 bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+          onClick={() => setIsAddStudentOpen(true)}
+        >
           <UserPlus className="h-4 w-4" />
           Add Student
         </Button>
       </div>
       
-      <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
+      <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-50">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between bg-gradient-to-r from-primary/5 to-secondary/5 pb-4">
           <div>
             <CardTitle>Student Directory</CardTitle>
             <CardDescription>View and manage student information</CardDescription>
@@ -107,36 +210,42 @@ const Students = () => {
           </div>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="border rounded-md divide-y shadow-sm overflow-hidden">
-            {filteredStudents.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-muted-foreground">No students found</p>
-              </div>
-            ) : (
-              filteredStudents.map((student) => {
-                const attendance = getAttendanceIndicator(student.attendanceRate);
+          {isLoadingStudents ? (
+            <div className="py-8 text-center">Loading students...</div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">No students found</p>
+            </div>
+          ) : (
+            <div className="border rounded-md divide-y shadow-sm overflow-hidden bg-white">
+              {filteredStudents.map((student) => {
+                // Mock attendance rate for demo purposes
+                const attendanceRate = Math.floor(Math.random() * 20) + 80;
+                const attendance = getAttendanceIndicator(attendanceRate);
                 
                 return (
                   <div key={student.id} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 items-center hover:bg-muted/10 transition-colors">
                     <div className="sm:col-span-4 flex items-center gap-4">
                       <Avatar className="h-10 w-10 flex-shrink-0 border border-primary/20">
-                        <AvatarImage src={student.avatar} />
+                        <AvatarImage src={student.avatar_url} />
                         <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20">{student.name.substring(0, 2)}</AvatarFallback>
                       </Avatar>
                       
                       <div className="min-w-0">
                         <div className="font-medium flex items-center gap-2">
                           {student.name}
-                          <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-primary/10 to-secondary/10">{student.grade}</Badge>
+                          <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-primary/10 to-secondary/10">
+                            {student.classes?.[0]?.class?.grade || 'No Class'}
+                          </Badge>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Mail className="h-3 w-3 text-primary" />
-                            <span className="truncate">{student.email}</span>
+                            <span className="truncate">{student.email || 'No Email'}</span>
                           </div>
                           <div className="hidden sm:flex items-center gap-1">
                             <Phone className="h-3 w-3 text-primary" />
-                            <span>{student.phone}</span>
+                            <span>{student.student_id}</span>
                           </div>
                         </div>
                       </div>
@@ -145,27 +254,129 @@ const Students = () => {
                     <div className="sm:col-span-3 flex items-center sm:justify-center mt-2 sm:mt-0">
                       <Badge className={`${attendance.color} flex items-center gap-1 text-white shadow-sm`}>
                         {attendance.icon}
-                        <span>{student.attendanceRate}% Attendance</span>
+                        <span>{attendanceRate}% Attendance</span>
                       </Badge>
                     </div>
                     
-                    <div className="sm:col-span-5 flex justify-end sm:justify-center gap-2 mt-2 sm:mt-0">
-                      <Button variant="gradient" size={isMobile ? "sm" : "default"} className="gap-1">
+                    <div className="sm:col-span-5 flex justify-end sm:justify-end gap-2 mt-2 sm:mt-0">
+                      <Button variant="default" size={isMobile ? "sm" : "default"} className="gap-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90">
                         <UserCheck className="h-4 w-4" />
                         <span className="hidden sm:inline">View Attendance</span>
                       </Button>
-                      <Button variant="outline" size={isMobile ? "sm" : "default"} className="bg-white/50 hover:bg-white">
-                        <span className="hidden sm:inline">Details</span>
-                        <span className="sm:hidden">View</span>
-                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size={isMobile ? "sm" : "default"} className="bg-white">
+                            <span className="hidden sm:inline">Actions</span>
+                            <span className="sm:hidden">...</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem className="cursor-pointer">
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Student
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer text-red-500 focus:text-red-500"
+                            onClick={() => handleDeleteStudent(student.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Student
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
+      
+      {/* Add Student Dialog */}
+      <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Student</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Student Name</Label>
+              <Input 
+                id="name" 
+                value={newStudentName} 
+                onChange={(e) => setNewStudentName(e.target.value)} 
+                placeholder="Enter student name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                value={newStudentEmail} 
+                onChange={(e) => setNewStudentEmail(e.target.value)} 
+                placeholder="Enter student email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="studentId">Student ID</Label>
+              <Input 
+                id="studentId" 
+                value={newStudentId} 
+                onChange={(e) => setNewStudentId(e.target.value)} 
+                placeholder="Enter student ID"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <Select value={newStudentGender} onValueChange={setNewStudentGender}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="class">Class</Label>
+              <Select value={newStudentClass} onValueChange={setNewStudentClass}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classesData.map(cls => (
+                    <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.grade})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAddStudentOpen(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="default"
+              onClick={handleAddStudent}
+              disabled={!newStudentName || !newStudentId}
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+            >
+              Add Student
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
