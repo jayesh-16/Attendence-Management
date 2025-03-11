@@ -34,7 +34,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
         .from('classes')
         .select(`
           *,
-          students:class_students!inner(
+          students:class_students(
             student:students(*)
           )
         `);
@@ -44,10 +44,16 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
         throw error;
       }
       
-      // Transform data to match Class type
+      // Transform the data to match our Class type
       return data.map(cls => ({
         ...cls,
-        students: cls.students?.map(s => s.student) || []
+        students: cls.students?.map(s => ({
+          id: s.student.id,
+          name: s.student.name,
+          email: s.student.email,
+          studentId: s.student.student_id, // Map student_id to studentId
+          avatarUrl: s.student.avatar_url
+        })) || []
       })) as Class[];
     },
   });
