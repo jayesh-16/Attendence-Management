@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Users, Calendar, Clock } from "lucide-react";
 import { mockClasses, calculateAttendanceStats, generateAttendanceRecords } from "@/lib/mock-data";
 import StudentsList from './StudentsList';
+import { format } from 'date-fns';
 
 interface CurrentClassViewProps {
   selectedClassId: string;
@@ -29,24 +30,58 @@ const CurrentClassView: React.FC<CurrentClassViewProps> = ({ selectedClassId }) 
     console.log("Student added to class", selectedClassId);
   };
 
+  const currentDate = new Date();
+
+  if (!selectedClass) {
+    return (
+      <Card className="mt-6 animate-fade-in overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+        <CardContent className="p-8 text-center">
+          <p className="text-muted-foreground">No class selected. Please select a class from the list.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="animate-fade-in overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
+    <Card className="mt-6 animate-fade-in overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
       <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
-        <CardTitle>Current Class: {selectedClass?.name || 'No Class Selected'}</CardTitle>
-        <p className="text-muted-foreground text-sm">
-          Mark students as present or absent. Changes are saved automatically.
-        </p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <div className="flex items-center space-x-2">
+              <CardTitle className="text-xl md:text-2xl">
+                {selectedClass.name}
+              </CardTitle>
+              <Badge className="bg-gradient-primary text-white">{selectedClass.grade}</Badge>
+            </div>
+            <p className="text-muted-foreground text-sm mt-1">
+              Mark students as present or absent. Changes are saved automatically.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3 self-end">
+            <div className="flex items-center gap-1 text-sm">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>{format(currentDate, 'MMM d, yyyy')}</span>
+            </div>
+            <div className="flex items-center gap-1 text-sm">
+              <Clock className="h-4 w-4 text-primary" />
+              <span>{selectedClass.schedule}</span>
+            </div>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      
+      <CardContent className="space-y-4 p-5">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-white/50 rounded-lg p-3 backdrop-blur-sm">
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="bg-background">
-              Total: {stats.total}
+            <Badge variant="outline" className="bg-background/80 backdrop-blur-sm flex items-center">
+              <Users className="h-3 w-3 mr-1" />
+              <span>Total: {stats.total}</span>
             </Badge>
-            <Badge className="bg-green-500 hover:bg-green-600">
+            <Badge className="bg-green-500 hover:bg-green-600 flex items-center">
               Present: {stats.present}
             </Badge>
-            <Badge className="bg-red-500 hover:bg-red-600">
+            <Badge className="bg-red-500 hover:bg-red-600 flex items-center">
               Absent: {stats.absent}
             </Badge>
           </div>
@@ -57,7 +92,7 @@ const CurrentClassView: React.FC<CurrentClassViewProps> = ({ selectedClassId }) 
               <Input
                 type="search"
                 placeholder="Search students..."
-                className="pl-9 w-full"
+                className="pl-9 w-full bg-white/80 backdrop-blur-sm"
                 value={searchQuery}
                 onChange={handleSearch}
               />

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
-import { Clock, UserPlus, BookOpen } from "lucide-react";
+import { Clock, UserPlus, BookOpen, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { mockClasses } from "@/lib/mock-data";
 import DashboardTabs from "./components/DashboardTabs";
@@ -75,36 +75,48 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">MME-AT-TRACKING</h1>
-        
-        <div className="flex items-center flex-wrap gap-4">
-          <div className="flex items-center">
-            <Clock className="mr-2 h-5 w-5 text-primary" />
-            <span>Today: {format(currentDate, 'M/d/yyyy')}</span>
+      <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg p-4 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            MME-AT-TRACKING
+          </h1>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center text-sm bg-white/60 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+              <Clock className="mr-2 h-4 w-4 text-primary" />
+              <span>Today: {format(currentDate, 'MMM d, yyyy')}</span>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="gap-2 bg-white/60 backdrop-blur-sm shadow-sm" 
+              onClick={() => setIsAddingStudent(true)}
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Student
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="gap-2 bg-white/60 backdrop-blur-sm shadow-sm" 
+              onClick={() => setIsAddingSubject(true)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Add Subject
+            </Button>
+            
+            <Button 
+              variant="gradient" 
+              size="sm"
+              onClick={() => navigate('/attendance')} 
+              className="whitespace-nowrap gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Take Attendance
+            </Button>
           </div>
-          
-          <Button 
-            variant="outline" 
-            className="gap-2" 
-            onClick={() => setIsAddingStudent(true)}
-          >
-            <UserPlus className="h-4 w-4" />
-            Add Student
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="gap-2" 
-            onClick={() => setIsAddingSubject(true)}
-          >
-            <BookOpen className="h-4 w-4" />
-            Add Subject
-          </Button>
-          
-          <Button variant="gradient" onClick={() => navigate('/attendance')} className="whitespace-nowrap">
-            Take Attendance
-          </Button>
         </div>
       </div>
       
