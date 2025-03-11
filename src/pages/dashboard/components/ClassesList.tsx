@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, GraduationCap } from "lucide-react";
+import { Clock, Users, GraduationCap, Trash2 } from "lucide-react";
 import { Class } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from '@tanstack/react-query';
@@ -13,13 +13,15 @@ interface ClassesListProps {
   selectedClassId: string;
   onClassSelect: (classId: string) => void;
   onTakeAttendance: (classId: string) => void;
+  onDeleteSubject: (id: string, name: string) => void;
 }
 
 const ClassesList: React.FC<ClassesListProps> = ({
   classes,
   selectedClassId,
   onClassSelect,
-  onTakeAttendance
+  onTakeAttendance,
+  onDeleteSubject
 }) => {
   const isMobile = useIsMobile();
 
@@ -32,14 +34,27 @@ const ClassesList: React.FC<ClassesListProps> = ({
           onClick={() => onClassSelect(cls.id)}
         >
           <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5 pb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <GraduationCap size={16} className="text-white" />
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                  <GraduationCap size={16} className="text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{cls.name}</CardTitle>
+                  <p className="text-muted-foreground text-xs">{cls.grade}</p>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-lg">{cls.name}</CardTitle>
-                <p className="text-muted-foreground text-xs">{cls.grade}</p>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteSubject(cls.id, cls.name);
+                }}
+              >
+                <Trash2 size={16} />
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 p-4">

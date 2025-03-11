@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Trash2 } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import ClassesList from './ClassesList';
 import CurrentClassView from './CurrentClassView';
 import StatisticsView from './StatisticsView';
+import StudentAttendanceView from './StudentAttendanceView';
 import { Class } from "@/types";
 import SubjectDialog from './SubjectDialog';
 import { toast } from "sonner";
@@ -25,6 +27,8 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 }) => {
   const [openAddSubject, setOpenAddSubject] = useState(false);
   const [selectedGrade, setSelectedGrade] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState<{ id: string, name: string } | null>(null);
 
   const { data: classesData = [], isLoading: isLoadingClasses, refetch: refetchClasses } = useQuery({
     queryKey: ['classes'],
@@ -62,6 +66,41 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
     refetchClasses();
     setOpenAddSubject(false);
     toast.success('Subject added successfully!');
+  };
+
+  // Handle subject deletion
+  const handleDeleteSubject = async () => {
+    if (!subjectToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('classes')
+        .delete()
+        .eq('id', subjectToDelete.id);
+
+      if (error) {
+        toast.error('Failed to delete subject: ' + error.message);
+        return;
+      }
+
+      refetchClasses();
+      setDeleteDialogOpen(false);
+      setSubjectToDelete(null);
+      toast.success('Subject deleted successfully!');
+      
+      // If the deleted subject was selected, clear the selection
+      if (selectedClassId === subjectToDelete.id) {
+        onClassSelect('');
+      }
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      toast.error('An unexpected error occurred');
+    }
+  };
+
+  const confirmDeleteSubject = (subject: { id: string, name: string }) => {
+    setSubjectToDelete(subject);
+    setDeleteDialogOpen(true);
   };
 
   // Filter classes by grade
@@ -112,6 +151,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
         <TabsContent value="se-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
             <StatisticsView gradeFilter="SE MME" />
+            <StudentAttendanceView gradeFilter="SE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">SE MME Subjects</h2>
               <div className="grid gap-4">
@@ -124,7 +164,8 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                         classes={seClasses} 
                         selectedClassId={selectedClassId} 
                         onClassSelect={onClassSelect} 
-                        onTakeAttendance={onTakeAttendance} 
+                        onTakeAttendance={onTakeAttendance}
+                        onDeleteSubject={(id, name) => confirmDeleteSubject({ id, name })}
                       />
                     )}
                     {seClasses.length < 5 && <AddSubjectCard grade="SE MME" />}
@@ -141,6 +182,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
         <TabsContent value="te-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
             <StatisticsView gradeFilter="TE MME" />
+            <StudentAttendanceView gradeFilter="TE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">TE MME Subjects</h2>
               <div className="grid gap-4">
@@ -153,7 +195,8 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                         classes={teClasses} 
                         selectedClassId={selectedClassId} 
                         onClassSelect={onClassSelect} 
-                        onTakeAttendance={onTakeAttendance} 
+                        onTakeAttendance={onTakeAttendance}
+                        onDeleteSubject={(id, name) => confirmDeleteSubject({ id, name })}
                       />
                     )}
                     {teClasses.length < 5 && <AddSubjectCard grade="TE MME" />}
@@ -170,6 +213,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
         <TabsContent value="be-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
             <StatisticsView gradeFilter="BE MME" />
+            <StudentAttendanceView gradeFilter="BE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">BE MME Subjects</h2>
               <div className="grid gap-4">
@@ -182,7 +226,8 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                         classes={beClasses} 
                         selectedClassId={selectedClassId} 
                         onClassSelect={onClassSelect} 
-                        onTakeAttendance={onTakeAttendance} 
+                        onTakeAttendance={onTakeAttendance}
+                        onDeleteSubject={(id, name) => confirmDeleteSubject({ id, name })}
                       />
                     )}
                     {beClasses.length < 5 && <AddSubjectCard grade="BE MME" />}
@@ -203,6 +248,24 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
         grade={selectedGrade}
         onSuccess={handleAddSubjectSuccess}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Subject Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the subject "{subjectToDelete?.name}"? This action cannot be undone.
+              All associated student records and attendance data will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSubject} className="bg-red-500 hover:bg-red-600 text-white">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
