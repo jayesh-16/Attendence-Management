@@ -35,11 +35,6 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
   const { user } = useAuth();
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
     resolver: zodResolver(subjectSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      schedule: '',
-    }
   });
 
   const onSubmit = async (data: z.infer<typeof subjectSchema>) => {
@@ -107,7 +102,7 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
           
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Subject"}
+              Add Subject
             </Button>
           </DialogFooter>
         </form>
@@ -117,3 +112,4 @@ const SubjectDialog: React.FC<SubjectDialogProps> = ({
 };
 
 export default SubjectDialog;
+

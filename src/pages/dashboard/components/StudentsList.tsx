@@ -1,111 +1,37 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X, UserPlus, Loader2 } from "lucide-react";
+import { Check, X, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import StudentDialog from './StudentDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Student {
   id: string;
   name: string;
   email: string;
-  studentId: string;
   avatarUrl?: string;
   status: "present" | "absent" | "none";
 }
 
 interface StudentsListProps {
-  classId?: string;
-  grade?: string;
-  students?: Student[];
+  students: Student[];
   onMarkPresent?: (studentId: string) => void;
   onMarkAbsent?: (studentId: string) => void;
-  onStudentAdded?: () => void;
 }
 
 const StudentsList: React.FC<StudentsListProps> = ({ 
-  classId,
-  grade = '',
-  students: propStudents,
+  students,
   onMarkPresent,
-  onMarkAbsent,
-  onStudentAdded
+  onMarkAbsent
 }) => {
   const [isAddingStudent, setIsAddingStudent] = useState(false);
-  const [students, setStudents] = useState<Student[]>(propStudents || []);
-  const [loading, setLoading] = useState(!propStudents);
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (propStudents) {
-      setStudents(propStudents);
-      return;
-    }
-    
-    if (classId) {
-      fetchStudentsForClass();
-    }
-  }, [classId, propStudents]);
-
-  const fetchStudentsForClass = async () => {
-    if (!classId || !user) return;
-    
-    try {
-      setLoading(true);
-      
-      // Get students associated with this class
-      const { data: classStudents, error: classError } = await supabase
-        .from('class_students')
-        .select('student_id')
-        .eq('class_id', classId);
-        
-      if (classError) throw classError;
-      
-      if (classStudents && classStudents.length > 0) {
-        const studentIds = classStudents.map(cs => cs.student_id);
-        
-        // Get student details
-        const { data: studentData, error: studentError } = await supabase
-          .from('students')
-          .select('id, name, email, student_id, avatar_url')
-          .in('id', studentIds);
-          
-        if (studentError) throw studentError;
-        
-        if (studentData) {
-          setStudents(studentData.map(student => ({
-            id: student.id,
-            name: student.name,
-            email: student.email || '',
-            studentId: student.student_id,
-            avatarUrl: student.avatar_url,
-            status: 'none' as "present" | "absent" | "none"
-          })));
-        }
-      } else {
-        setStudents([]);
-      }
-    } catch (error: any) {
-      console.error('Error fetching students:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load students",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStudentAdded = () => {
-    fetchStudentsForClass();
-    onStudentAdded?.();
-  };
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentId, setNewStudentId] = useState("");
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -118,6 +44,21 @@ const StudentsList: React.FC<StudentsListProps> = ({
     }
   };
 
+  const handleAddStudent = () => {
+    // In a real app, this would call an API to add the student
+    console.log("Adding student:", {
+      name: newStudentName,
+      email: newStudentEmail,
+      studentId: newStudentId
+    });
+    
+    // Reset form
+    setNewStudentName("");
+    setNewStudentEmail("");
+    setNewStudentId("");
+    setIsAddingStudent(false);
+  };
+
   return (
     <>
       <div className="border rounded-md overflow-hidden shadow-sm">
@@ -127,12 +68,7 @@ const StudentsList: React.FC<StudentsListProps> = ({
           <div className="col-span-3 sm:col-span-2 text-center">Actions</div>
         </div>
         
-        {loading ? (
-          <div className="p-6 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
-            <p className="text-muted-foreground">Loading students...</p>
-          </div>
-        ) : students.length === 0 ? (
+        {students.length === 0 ? (
           <div className="p-6 text-center">
             <p className="text-muted-foreground mb-4">No students found</p>
             <Button 
@@ -155,9 +91,7 @@ const StudentsList: React.FC<StudentsListProps> = ({
                   </Avatar>
                   <div className="truncate">
                     <div className="font-medium truncate">{student.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {student.studentId}{student.email ? ` • ${student.email}` : ''}
-                    </div>
+                    <div className="text-xs text-muted-foreground truncate">{student.email}</div>
                   </div>
                 </div>
                 
@@ -203,13 +137,52 @@ const StudentsList: React.FC<StudentsListProps> = ({
         )}
       </div>
 
-      <StudentDialog 
-        open={isAddingStudent} 
-        onOpenChange={setIsAddingStudent}
-        classId={classId}
-        grade={grade}
-        onSuccess={handleStudentAdded}
-      />
+      <Dialog open={isAddingStudent} onOpenChange={setIsAddingStudent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Student</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Student Name</Label>
+              <Input 
+                id="name" 
+                value={newStudentName} 
+                onChange={(e) => setNewStudentName(e.target.value)} 
+                placeholder="Enter student name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                value={newStudentEmail} 
+                onChange={(e) => setNewStudentEmail(e.target.value)} 
+                placeholder="Enter student email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="studentId">Student ID</Label>
+              <Input 
+                id="studentId" 
+                value={newStudentId} 
+                onChange={(e) => setNewStudentId(e.target.value)} 
+                placeholder="Enter student ID"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="gradient" 
+              onClick={handleAddStudent}
+              disabled={!newStudentName || !newStudentEmail || !newStudentId}
+            >
+              Add Student
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

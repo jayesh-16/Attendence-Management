@@ -7,16 +7,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 
-interface StatisticsViewProps {
-  selectedClassId: string;
-}
-
 const COLORS = ['#4f46e5', '#ec4899', '#10b981', '#f59e0b'];
 
-const StatisticsView: React.FC<StatisticsViewProps> = ({ selectedClassId }) => {
+const StatisticsView = () => {
   const [selectedGrade, setSelectedGrade] = useState("SE MME");
   const [timeRange, setTimeRange] = useState("7"); // 7 days default
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(selectedClassId || null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
   // Fetch all classes for the selected grade
   const { data: classes = [] } = useQuery({
@@ -124,7 +120,7 @@ const StatisticsView: React.FC<StatisticsViewProps> = ({ selectedClassId }) => {
     <Card className="mt-6 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-light/30">
       <CardHeader className="bg-gradient-to-r from-secondary/10 to-primary/10 pb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <CardTitle>Attendance Statistics {selectedClassId && `for Class ${selectedClassId}`}</CardTitle>
+          <CardTitle>Attendance Statistics</CardTitle>
           <div className="flex gap-2 w-full sm:w-auto">
             <Select value={selectedGrade} onValueChange={setSelectedGrade}>
               <SelectTrigger className="w-[140px]">
