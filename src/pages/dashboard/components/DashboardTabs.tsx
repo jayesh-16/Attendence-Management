@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import ClassesList from './ClassesList';
 import CurrentClassView from './CurrentClassView';
 import StatisticsView from './StatisticsView';
-import HistoryView from './HistoryView';
 import { Class } from "@/types";
 import SubjectDialog from './SubjectDialog';
 import { toast } from "sonner";
@@ -88,14 +87,8 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 
   return (
     <>
-      <Tabs defaultValue="statistics" className="space-y-4">
+      <Tabs defaultValue="se-mme" className="space-y-4">
         <TabsList className="w-full bg-muted/30 p-1">
-          <TabsTrigger 
-            value="statistics" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
-          >
-            Statistics
-          </TabsTrigger>
           <TabsTrigger 
             value="se-mme" 
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
@@ -114,20 +107,11 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
           >
             BE MME
           </TabsTrigger>
-          <TabsTrigger 
-            value="calendar" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white"
-          >
-            Calendar
-          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="statistics">
-          <StatisticsView />
-        </TabsContent>
 
         <TabsContent value="se-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
+            <StatisticsView gradeFilter="SE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">SE MME Subjects</h2>
               <div className="grid gap-4">
@@ -156,6 +140,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 
         <TabsContent value="te-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
+            <StatisticsView gradeFilter="TE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">TE MME Subjects</h2>
               <div className="grid gap-4">
@@ -184,6 +169,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 
         <TabsContent value="be-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
+            <StatisticsView gradeFilter="BE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">BE MME Subjects</h2>
               <div className="grid gap-4">
@@ -208,10 +194,6 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
               </div>
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="calendar">
-          <HistoryView />
         </TabsContent>
       </Tabs>
 

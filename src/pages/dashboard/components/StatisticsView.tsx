@@ -1,33 +1,57 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, GraduationCap, UserCheck, Users2 } from "lucide-react";
-import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
+import { Users, GraduationCap } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 
-// Colors for charts
-const GENDER_COLORS = ['#69c0ff', '#ffc0cb'];
-const ATTENDANCE_COLORS = ['#69c0ff', '#ffc069', '#ff7875', '#b37feb'];
+interface StatisticsViewProps {
+  gradeFilter: string;
+}
 
-const StatisticsView = () => {
-  const [timeRange, setTimeRange] = useState("7"); // 7 days default
-
-  // Fetch students data
+const StatisticsView = ({ gradeFilter }: StatisticsViewProps) => {
+  // Fetch students data filtered by grade
   const { data: studentsData = [], isLoading: isLoadingStudents } = useQuery({
-    queryKey: ['students'],
+    queryKey: ['students', gradeFilter],
     queryFn: async () => {
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('grade', gradeFilter);
+      
+      if (classesError) throw classesError;
+      
+      if (!classesData || classesData.length === 0) {
+        return [];
+      }
+      
+      const classIds = classesData.map(c => c.id);
+      
       const { data, error } = await supabase
-        .from('students')
-        .select('*');
+        .from('class_students')
+        .select('student:students(*)')
+        .in('class_id', classIds);
       
       if (error) throw error;
-      return data || [];
+      
+      // Extract unique students (a student might be in multiple classes)
+      const uniqueStudents = [];
+      const studentIds = new Set();
+      
+      data.forEach(item => {
+        if (!studentIds.has(item.student.id)) {
+          studentIds.add(item.student.id);
+          uniqueStudents.push(item.student);
+        }
+      });
+      
+      return uniqueStudents;
     },
   });
 
-  // Fetch teachers/profiles data
+  // Fetch teachers data
   const { data: teachersData = [], isLoading: isLoadingTeachers } = useQuery({
     queryKey: ['teachers'],
     queryFn: async () => {
@@ -41,28 +65,32 @@ const StatisticsView = () => {
     },
   });
 
-  // Fetch attendance data
+  // Fetch attendance data for the grade
   const { data: attendanceData = [], isLoading: isLoadingAttendance } = useQuery({
-    queryKey: ['attendance', timeRange],
+    queryKey: ['attendance', gradeFilter],
     queryFn: async () => {
-      const date = new Date();
-      date.setDate(date.getDate() - parseInt(timeRange));
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('grade', gradeFilter);
+      
+      if (classesError) throw classesError;
+      
+      if (!classesData || classesData.length === 0) {
+        return [];
+      }
+      
+      const classIds = classesData.map(c => c.id);
       
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
-        .gte('date', date.toISOString().split('T')[0]);
+        .in('class_id', classIds);
       
       if (error) throw error;
       return data || [];
     },
   });
-
-  // Mock gender data - in a real app, we would add a gender field to the students table
-  const genderData = [
-    { name: 'Boys', value: Math.floor(studentsData.length * 0.45) },
-    { name: 'Girls', value: studentsData.length - Math.floor(studentsData.length * 0.45) }
-  ];
 
   // Prepare daily attendance data
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -81,40 +109,18 @@ const StatisticsView = () => {
   const lateCount = attendanceData.filter(record => record.status === 'late').length;
   const excusedCount = attendanceData.filter(record => record.status === 'excused').length;
   
-  const attendanceStatusData = [
-    { name: 'Present', value: presentCount || 75 },
-    { name: 'Absent', value: absentCount || 15 },
-    { name: 'Late', value: lateCount || 8 },
-    { name: 'Excused', value: excusedCount || 5 }
-  ];
-
   // Calculate statistics numbers
   const totalStudents = studentsData.length;
   const totalTeachers = teachersData.length;
-  const totalAdmins = 2; // Mock data - in a real app, filter profiles by role
-  const totalParents = 382; // Mock data - in a real app, this would be from a parents table
-
-  // Custom pie chart label
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
-  
-    return (
-      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    );
-  };
 
   return (
-    <Card className="mt-6 overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-50">
+    <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-white to-blue-50">
       <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5 pb-4">
-        <CardTitle>School Statistics</CardTitle>
+        <CardTitle>{gradeFilter} Statistics</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <StatCard 
             title="Students" 
             value={totalStudents} 
@@ -129,26 +135,11 @@ const StatisticsView = () => {
             color="bg-yellow-100" 
             isLoading={isLoadingTeachers}
           />
-          <StatCard 
-            title="Admins" 
-            value={totalAdmins} 
-            icon={<UserCheck className="h-5 w-5 text-purple-500" />} 
-            color="bg-purple-100" 
-            isLoading={false}
-          />
-          <StatCard 
-            title="Parents" 
-            value={totalParents} 
-            icon={<Users2 className="h-5 w-5 text-green-500" />} 
-            color="bg-green-100" 
-            isLoading={false}
-          />
         </div>
 
         <Tabs defaultValue="attendance" className="space-y-4">
           <TabsList>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="gender">Gender Distribution</TabsTrigger>
           </TabsList>
 
           <TabsContent value="attendance" className="space-y-4">
@@ -164,37 +155,6 @@ const StatisticsView = () => {
                   <Bar dataKey="absent" name="Absent" fill="#ffc069" />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="gender" className="h-[300px]">
-            <div className="flex items-center justify-center h-full">
-              <div className="relative h-[250px] w-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={genderData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {genderData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex">
-                  <Users className="h-12 w-12 text-gray-200" />
-                </div>
-              </div>
             </div>
           </TabsContent>
         </Tabs>
