@@ -8,10 +8,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, PencilLine, Check, X, Clock } from "lucide-react";
+import { Plus, Search, PencilLine, Check, X, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Student } from "@/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface StudentAttendanceViewProps {
   gradeFilter: string;
@@ -23,10 +33,11 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   
   const [newStudent, setNewStudent] = useState({
     name: '',
-    email: '',
     studentId: ''
   });
 
@@ -144,7 +155,7 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
   
   // Add student mutation
   const addStudentMutation = useMutation({
-    mutationFn: async (studentData: { name: string, email: string, studentId: string }) => {
+    mutationFn: async (studentData: { name: string, studentId: string }) => {
       // Get the auth user ID
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -157,7 +168,6 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
         .from('students')
         .insert({
           name: studentData.name,
-          email: studentData.email,
           student_id: studentData.studentId,
           created_by: user.id
         })
@@ -166,16 +176,26 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
       
       if (studentError) throw studentError;
       
-      // Then, add the student to the selected class
-      if (selectedSubject) {
-        const { error: classStudentError } = await supabase
-          .from('class_students')
-          .insert({
-            class_id: selectedSubject,
-            student_id: newStudent.id
-          });
+      // Then, add the student to all classes in this grade
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('grade', gradeFilter);
+      
+      if (classesError) throw classesError;
+      
+      // Add student to all classes in this grade
+      if (classesData && classesData.length > 0) {
+        const classStudentEntries = classesData.map(cls => ({
+          class_id: cls.id,
+          student_id: newStudent.id
+        }));
         
-        if (classStudentError) throw classStudentError;
+        const { error: enrollmentError } = await supabase
+          .from('class_students')
+          .insert(classStudentEntries);
+        
+        if (enrollmentError) throw enrollmentError;
       }
       
       return newStudent;
@@ -183,7 +203,7 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grade-students'] });
       setIsAddStudentOpen(false);
-      setNewStudent({ name: '', email: '', studentId: '' });
+      setNewStudent({ name: '', studentId: '' });
       toast.success('Student added successfully');
     },
     onError: (error) => {
@@ -198,7 +218,6 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
         .from('students')
         .update({
           name: studentData.name,
-          email: studentData.email,
           student_id: studentData.studentId
         })
         .eq('id', studentData.id);
@@ -215,6 +234,29 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
     },
     onError: (error) => {
       toast.error('Failed to update student: ' + error.message);
+    }
+  });
+  
+  // Delete student mutation
+  const deleteStudentMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', studentId);
+      
+      if (error) throw error;
+      
+      return studentId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grade-students'] });
+      setDeleteConfirmOpen(false);
+      setStudentToDelete(null);
+      toast.success('Student deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete student: ' + error.message);
     }
   });
   
@@ -299,6 +341,19 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
     setIsEditStudentOpen(true);
   };
   
+  // Open delete student dialog
+  const openDeleteStudent = (student: Student) => {
+    setStudentToDelete(student);
+    setDeleteConfirmOpen(true);
+  };
+  
+  // Handle delete student
+  const handleDeleteStudent = () => {
+    if (studentToDelete) {
+      deleteStudentMutation.mutate(studentToDelete.id);
+    }
+  };
+  
   // Mark attendance
   const markAttendance = (studentId: string, status: 'present' | 'absent' | 'late') => {
     recordAttendanceMutation.mutate({ studentId, status });
@@ -367,13 +422,7 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
               <Button 
                 variant="outline" 
                 className="gap-2" 
-                onClick={() => {
-                  if (!selectedSubject && classesData.length > 0) {
-                    toast.error("Please select a subject first");
-                    return;
-                  }
-                  setIsAddStudentOpen(true);
-                }}
+                onClick={() => setIsAddStudentOpen(true)}
               >
                 <Plus size={16} />
                 Add Student
@@ -393,7 +442,6 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
                       </Avatar>
                       <div>
                         <p className="font-medium line-clamp-1">{student.name}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{student.email}</p>
                       </div>
                     </div>
                     
@@ -445,6 +493,14 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
                       >
                         <PencilLine size={16} />
                       </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-red-500 hover:bg-red-100 hover:text-red-700"
+                        onClick={() => openDeleteStudent(student)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
                     </div>
                   </div>
                 );
@@ -454,13 +510,7 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
                 <Button 
                   variant="outline" 
                   className="gap-2" 
-                  onClick={() => {
-                    if (!selectedSubject && classesData.length > 0) {
-                      toast.error("Please select a subject first");
-                      return;
-                    }
-                    setIsAddStudentOpen(true);
-                  }}
+                  onClick={() => setIsAddStudentOpen(true)}
                 >
                   <Plus size={16} />
                   Add Student
@@ -471,15 +521,13 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
         </div>
       </CardContent>
       
-      {/* Add Student Dialog */}
+      {/* Add Student Dialog - Simplified to only name and student ID */}
       <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Student</DialogTitle>
             <DialogDescription>
-              Add a new student to the {selectedSubject 
-                ? classesData.find(c => c.id === selectedSubject)?.name 
-                : gradeFilter}
+              Add a new student to {gradeFilter}
             </DialogDescription>
           </DialogHeader>
           
@@ -495,23 +543,12 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                value={newStudent.email} 
-                onChange={(e) => setNewStudent({...newStudent, email: e.target.value})} 
-                placeholder="Enter email address"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
+              <Label htmlFor="studentId">Student ID/Roll Number</Label>
               <Input 
                 id="studentId" 
                 value={newStudent.studentId} 
                 onChange={(e) => setNewStudent({...newStudent, studentId: e.target.value})} 
-                placeholder="Enter student ID"
+                placeholder="Enter student ID or roll number"
               />
             </div>
           </div>
@@ -533,7 +570,7 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
         </DialogContent>
       </Dialog>
       
-      {/* Edit Student Dialog */}
+      {/* Edit Student Dialog - Simplified to only name and student ID */}
       <Dialog open={isEditStudentOpen} onOpenChange={setIsEditStudentOpen}>
         <DialogContent>
           <DialogHeader>
@@ -556,23 +593,12 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="edit-email">Email Address</Label>
-                <Input 
-                  id="edit-email" 
-                  type="email" 
-                  value={selectedStudent.email} 
-                  onChange={(e) => setSelectedStudent({...selectedStudent, email: e.target.value})} 
-                  placeholder="Enter email address"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-studentId">Student ID</Label>
+                <Label htmlFor="edit-studentId">Student ID/Roll Number</Label>
                 <Input 
                   id="edit-studentId" 
                   value={selectedStudent.studentId} 
                   onChange={(e) => setSelectedStudent({...selectedStudent, studentId: e.target.value})} 
-                  placeholder="Enter student ID"
+                  placeholder="Enter student ID or roll number"
                 />
               </div>
             </div>
@@ -594,6 +620,24 @@ const StudentAttendanceView: React.FC<StudentAttendanceViewProps> = ({ gradeFilt
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Delete Student Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Student</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {studentToDelete?.name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStudentToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStudent} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

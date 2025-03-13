@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus, UserCheck, Mail, Phone, Check, X, Clock, Edit, Trash2 } from "lucide-react";
+import { Search, UserPlus, UserCheck, Mail, Check, X, Clock, Edit, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
@@ -20,30 +20,32 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Students = () => {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<{id: string, name: string} | null>(null);
   
-  // New state for student form
+  // New state for student form - simplified to only name and student ID
   const [newStudentName, setNewStudentName] = useState("");
-  const [newStudentEmail, setNewStudentEmail] = useState("");
   const [newStudentId, setNewStudentId] = useState("");
-  const [newStudentClass, setNewStudentClass] = useState("");
-  const [newStudentGender, setNewStudentGender] = useState("");
   
   // Fetch students data
   const { data: studentsData = [], isLoading: isLoadingStudents, refetch: refetchStudents } = useQuery({
@@ -62,28 +64,9 @@ const Students = () => {
     },
   });
   
-  // Fetch classes for dropdown
-  const { data: classesData = [] } = useQuery({
-    queryKey: ['classes'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('classes')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        toast.error('Failed to load classes: ' + error.message);
-        throw error;
-      }
-      
-      return data;
-    },
-  });
-  
   // Filter students based on search query
   const filteredStudents = studentsData.filter(student => 
     student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.student_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
@@ -96,10 +79,7 @@ const Students = () => {
   
   const resetForm = () => {
     setNewStudentName("");
-    setNewStudentEmail("");
     setNewStudentId("");
-    setNewStudentClass("");
-    setNewStudentGender("");
   };
   
   const handleAddStudent = async () => {
@@ -117,9 +97,7 @@ const Students = () => {
         .from('students')
         .insert({
           name: newStudentName,
-          email: newStudentEmail,
           student_id: newStudentId,
-          gender: newStudentGender,
           created_by: user.id
         })
         .select();
@@ -127,21 +105,6 @@ const Students = () => {
       if (error) {
         toast.error('Failed to add student: ' + error.message);
         return;
-      }
-      
-      // If a class was selected, add the student to the class
-      if (newStudentClass && data[0]) {
-        const { error: enrollmentError } = await supabase
-          .from('class_students')
-          .insert({
-            class_id: newStudentClass,
-            student_id: data[0].id
-          });
-        
-        if (enrollmentError) {
-          toast.error('Failed to add student to class: ' + enrollmentError.message);
-          return;
-        }
       }
       
       toast.success('Student added successfully!');
@@ -154,20 +117,24 @@ const Students = () => {
     }
   };
   
-  const handleDeleteStudent = async (studentId: string) => {
+  const handleDeleteStudent = async () => {
+    if (!studentToDelete) return;
+    
     try {
       const { error } = await supabase
         .from('students')
         .delete()
-        .eq('id', studentId);
+        .eq('id', studentToDelete.id);
       
       if (error) {
         toast.error('Failed to delete student: ' + error.message);
         return;
       }
       
-      toast.success('Student deleted successfully!');
+      toast.success(`Student ${studentToDelete.name} deleted successfully!`);
       refetchStudents();
+      setDeleteConfirmOpen(false);
+      setStudentToDelete(null);
       
     } catch (error) {
       toast.error('An error occurred: ' + error.message);
@@ -238,15 +205,8 @@ const Students = () => {
                             {student.classes?.[0]?.class?.grade || 'No Class'}
                           </Badge>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3 text-primary" />
-                            <span className="truncate">{student.email || 'No Email'}</span>
-                          </div>
-                          <div className="hidden sm:flex items-center gap-1">
-                            <Phone className="h-3 w-3 text-primary" />
-                            <span>{student.student_id}</span>
-                          </div>
+                        <div className="text-sm text-muted-foreground">
+                          ID: {student.student_id}
                         </div>
                       </div>
                     </div>
@@ -278,7 +238,10 @@ const Students = () => {
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="cursor-pointer text-red-500 focus:text-red-500"
-                            onClick={() => handleDeleteStudent(student.id)}
+                            onClick={() => {
+                              setStudentToDelete({id: student.id, name: student.name});
+                              setDeleteConfirmOpen(true);
+                            }}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete Student
@@ -294,7 +257,7 @@ const Students = () => {
         </CardContent>
       </Card>
       
-      {/* Add Student Dialog */}
+      {/* Add Student Dialog - Simplified to only name and student ID */}
       <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
         <DialogContent>
           <DialogHeader>
@@ -311,49 +274,13 @@ const Students = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                value={newStudentEmail} 
-                onChange={(e) => setNewStudentEmail(e.target.value)} 
-                placeholder="Enter student email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
+              <Label htmlFor="studentId">Student ID/Roll Number</Label>
               <Input 
                 id="studentId" 
                 value={newStudentId} 
                 onChange={(e) => setNewStudentId(e.target.value)} 
-                placeholder="Enter student ID"
+                placeholder="Enter student ID or roll number"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={newStudentGender} onValueChange={setNewStudentGender}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="class">Class</Label>
-              <Select value={newStudentClass} onValueChange={setNewStudentClass}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classesData.map(cls => (
-                    <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.grade})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <DialogFooter>
@@ -377,6 +304,24 @@ const Students = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Delete Student Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Student</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {studentToDelete?.name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStudentToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStudent} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
