@@ -12,7 +12,7 @@ export interface Class {
   name: string;
   description?: string;
   schedule: string;
-  grade: string;
+  grade: string;  // This represents SE MME, TE MME, BE MME
   students: Student[];
 }
 
