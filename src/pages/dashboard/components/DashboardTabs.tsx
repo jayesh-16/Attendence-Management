@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import ClassesList from './ClassesList';
 import CurrentClassView from './CurrentClassView';
 import StatisticsView from './StatisticsView';
-import StudentAttendanceView from './StudentAttendanceView';
 import { Class } from "@/types";
 import SubjectDialog from './SubjectDialog';
 import { toast } from "sonner";
@@ -150,8 +149,6 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 
         <TabsContent value="se-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
-            <StatisticsView gradeFilter="SE MME" />
-            <StudentAttendanceView gradeFilter="SE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">SE MME Subjects</h2>
               <div className="grid gap-4">
@@ -176,13 +173,15 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                 )}
               </div>
             </div>
+            
+            <StatisticsView gradeFilter="SE MME" />
+            
+            {selectedClassId && <CurrentClassView selectedClassId={selectedClassId} />}
           </div>
         </TabsContent>
 
         <TabsContent value="te-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
-            <StatisticsView gradeFilter="TE MME" />
-            <StudentAttendanceView gradeFilter="TE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">TE MME Subjects</h2>
               <div className="grid gap-4">
@@ -207,13 +206,15 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                 )}
               </div>
             </div>
+            
+            <StatisticsView gradeFilter="TE MME" />
+            
+            {selectedClassId && <CurrentClassView selectedClassId={selectedClassId} />}
           </div>
         </TabsContent>
 
         <TabsContent value="be-mme" className="space-y-6 mt-6 animate-fade-in">
           <div className="space-y-8">
-            <StatisticsView gradeFilter="BE MME" />
-            <StudentAttendanceView gradeFilter="BE MME" />
             <div>
               <h2 className="text-2xl font-semibold mb-4">BE MME Subjects</h2>
               <div className="grid gap-4">
@@ -238,6 +239,10 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                 )}
               </div>
             </div>
+            
+            <StatisticsView gradeFilter="BE MME" />
+            
+            {selectedClassId && <CurrentClassView selectedClassId={selectedClassId} />}
           </div>
         </TabsContent>
       </Tabs>

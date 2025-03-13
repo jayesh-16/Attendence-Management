@@ -4,7 +4,7 @@ export interface Student {
   name: string;
   avatarUrl?: string;
   studentId: string;
-  email: string;
+  email?: string;
 }
 
 export interface Class {

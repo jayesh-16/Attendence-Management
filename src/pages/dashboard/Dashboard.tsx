@@ -10,8 +10,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogFooter,
-  DialogTrigger 
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -33,33 +32,11 @@ const Dashboard: React.FC = () => {
   const currentDate = new Date();
   
   // New state for forms
-  const [newStudentName, setNewStudentName] = useState("");
-  const [newStudentEmail, setNewStudentEmail] = useState("");
-  const [newStudentId, setNewStudentId] = useState("");
-  const [newStudentClass, setNewStudentClass] = useState("");
-  
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectDescription, setNewSubjectDescription] = useState("");
   const [newSubjectClass, setNewSubjectClass] = useState("");
   const [newSubjectSchedule, setNewSubjectSchedule] = useState("");
-  
-  // Fetch classes data
-  const { data: classesData = [] } = useQuery({
-    queryKey: ['dashboardClasses'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('classes')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        toast.error('Failed to load classes');
-        throw error;
-      }
-      
-      return data;
-    },
-  });
+  const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   
   const handleTakeAttendance = (classId: string) => {
     navigate(`/attendance/${classId}/${format(currentDate, 'yyyy-MM-dd')}`);
@@ -67,59 +44,6 @@ const Dashboard: React.FC = () => {
   
   const handleClassSelect = (classId: string) => {
     setSelectedClassId(classId);
-  };
-
-  const handleAddStudent = async () => {
-    try {
-      // Get the auth user ID
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('You need to be logged in to add a student');
-        return;
-      }
-      
-      // Add the student to the database
-      const { data, error } = await supabase
-        .from('students')
-        .insert({
-          name: newStudentName,
-          email: newStudentEmail,
-          student_id: newStudentId,
-          created_by: user.id
-        })
-        .select();
-      
-      if (error) {
-        toast.error('Failed to add student: ' + error.message);
-        return;
-      }
-      
-      // If a class was selected, add the student to the class
-      if (newStudentClass && data[0]) {
-        const { error: enrollmentError } = await supabase
-          .from('class_students')
-          .insert({
-            class_id: newStudentClass,
-            student_id: data[0].id
-          });
-        
-        if (enrollmentError) {
-          toast.error('Failed to add student to class: ' + enrollmentError.message);
-          return;
-        }
-      }
-      
-      toast.success('Student added successfully!');
-      
-      // Reset form
-      setNewStudentName("");
-      setNewStudentEmail("");
-      setNewStudentId("");
-      setNewStudentClass("");
-    } catch (error) {
-      toast.error('An error occurred: ' + error.message);
-    }
   };
 
   const handleAddSubject = async () => {
@@ -155,6 +79,7 @@ const Dashboard: React.FC = () => {
       setNewSubjectDescription("");
       setNewSubjectClass("");
       setNewSubjectSchedule("");
+      setIsAddSubjectOpen(false);
     } catch (error) {
       toast.error('An error occurred: ' + error.message);
     }
@@ -171,138 +96,14 @@ const Dashboard: React.FC = () => {
             <span>Today: {format(currentDate, 'MMM d, yyyy')}</span>
           </div>
           
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Student</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Student Name</Label>
-                  <Input 
-                    id="name" 
-                    value={newStudentName} 
-                    onChange={(e) => setNewStudentName(e.target.value)} 
-                    placeholder="Enter student name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={newStudentEmail} 
-                    onChange={(e) => setNewStudentEmail(e.target.value)} 
-                    placeholder="Enter student email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="studentId">Student ID</Label>
-                  <Input 
-                    id="studentId" 
-                    value={newStudentId} 
-                    onChange={(e) => setNewStudentId(e.target.value)} 
-                    placeholder="Enter student ID"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="class">Class</Label>
-                  <Select value={newStudentClass} onValueChange={setNewStudentClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classesData.map(cls => (
-                        <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  variant="default"
-                  onClick={handleAddStudent}
-                  disabled={!newStudentName || !newStudentId}
-                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
-                >
-                  Add Student
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <BookOpen className="h-4 w-4" />
-                Add Subject
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Subject</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="subjectName">Subject Name</Label>
-                  <Input 
-                    id="subjectName" 
-                    value={newSubjectName} 
-                    onChange={(e) => setNewSubjectName(e.target.value)} 
-                    placeholder="Enter subject name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea 
-                    id="description" 
-                    value={newSubjectDescription} 
-                    onChange={(e) => setNewSubjectDescription(e.target.value)} 
-                    placeholder="Enter subject description"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="schedule">Schedule</Label>
-                  <Input 
-                    id="schedule" 
-                    value={newSubjectSchedule} 
-                    onChange={(e) => setNewSubjectSchedule(e.target.value)} 
-                    placeholder="E.g., Mon, Wed, Fri 10:00-11:30"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="subjectClass">Class</Label>
-                  <Select value={newSubjectClass} onValueChange={setNewSubjectClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SE MME">SE MME</SelectItem>
-                      <SelectItem value="TE MME">TE MME</SelectItem>
-                      <SelectItem value="BE MME">BE MME</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  variant="default"
-                  onClick={handleAddSubject}
-                  disabled={!newSubjectName || !newSubjectClass || !newSubjectSchedule}
-                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
-                >
-                  Add Subject
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => setIsAddSubjectOpen(true)}
+          >
+            <BookOpen className="h-4 w-4" />
+            Add Subject
+          </Button>
           
           <Button 
             variant="default" 
@@ -319,6 +120,67 @@ const Dashboard: React.FC = () => {
         onClassSelect={handleClassSelect} 
         onTakeAttendance={handleTakeAttendance}
       />
+      
+      {/* Add Subject Dialog */}
+      <Dialog open={isAddSubjectOpen} onOpenChange={setIsAddSubjectOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Subject</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="subjectName">Subject Name</Label>
+              <Input 
+                id="subjectName" 
+                value={newSubjectName} 
+                onChange={(e) => setNewSubjectName(e.target.value)} 
+                placeholder="Enter subject name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                value={newSubjectDescription} 
+                onChange={(e) => setNewSubjectDescription(e.target.value)} 
+                placeholder="Enter subject description"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="schedule">Schedule</Label>
+              <Input 
+                id="schedule" 
+                value={newSubjectSchedule} 
+                onChange={(e) => setNewSubjectSchedule(e.target.value)} 
+                placeholder="E.g., Mon, Wed, Fri 10:00-11:30"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="subjectClass">Class</Label>
+              <Select value={newSubjectClass} onValueChange={setNewSubjectClass}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SE MME">SE MME</SelectItem>
+                  <SelectItem value="TE MME">TE MME</SelectItem>
+                  <SelectItem value="BE MME">BE MME</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="default"
+              onClick={handleAddSubject}
+              disabled={!newSubjectName || !newSubjectClass || !newSubjectSchedule}
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+            >
+              Add Subject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
