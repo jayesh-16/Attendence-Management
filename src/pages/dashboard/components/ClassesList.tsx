@@ -7,6 +7,8 @@ import { Class } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +37,7 @@ const ClassesList: React.FC<ClassesListProps> = ({
   onDeleteSubject
 }) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [subjectToDelete, setSubjectToDelete] = React.useState<{id: string, name: string} | null>(null);
 
@@ -50,6 +53,14 @@ const ClassesList: React.FC<ClassesListProps> = ({
       setSubjectToDelete(null);
       setDeleteDialogOpen(false);
     }
+  };
+
+  const handleTakeAttendance = (classId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Use the current date formatted as YYYY-MM-DD
+    const today = format(new Date(), 'yyyy-MM-dd');
+    // Navigate directly to the attendance session page
+    navigate(`/attendance/${classId}/${today}`);
   };
 
   return (
@@ -96,10 +107,7 @@ const ClassesList: React.FC<ClassesListProps> = ({
                 
                 <Button 
                   variant="default"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTakeAttendance(cls.id);
-                  }}
+                  onClick={(e) => handleTakeAttendance(cls.id, e)}
                   size={isMobile ? "sm" : "default"}
                   className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white"
                 >

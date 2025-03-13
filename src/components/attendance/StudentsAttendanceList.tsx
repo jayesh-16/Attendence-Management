@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Users, CheckCircle2, XCircle, BadgeAlert } from "lucide-react";
+import { Users, CheckCircle2, XCircle, BadgeAlert, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AttendanceStatus, Student } from "@/types";
 import StudentAttendanceRow from './StudentAttendanceRow';
@@ -46,6 +46,10 @@ const StudentsAttendanceList = ({
         <TabsTrigger value="late" className="flex items-center gap-2">
           <BadgeAlert size={14} className="text-late" />
           <span>Late ({stats.late})</span>
+        </TabsTrigger>
+        <TabsTrigger value="excused" className="flex items-center gap-2">
+          <FileText size={14} className="text-excused" />
+          <span>Excused ({stats.excused})</span>
         </TabsTrigger>
       </TabsList>
       
@@ -119,6 +123,27 @@ const StudentsAttendanceList = ({
           ) : (
             filteredStudents
               .filter(item => item.status === "late")
+              .map((item) => (
+                <StudentAttendanceRow
+                  key={item.student.id}
+                  data={item}
+                  updateStatus={updateStatus}
+                  openNoteDialog={openNoteDialog}
+                />
+              ))
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="excused" className="mt-4">
+        <div className="border rounded-md divide-y">
+          {filteredStudents.filter(item => item.status === "excused").length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">No excused students</p>
+            </div>
+          ) : (
+            filteredStudents
+              .filter(item => item.status === "excused")
               .map((item) => (
                 <StudentAttendanceRow
                   key={item.student.id}
