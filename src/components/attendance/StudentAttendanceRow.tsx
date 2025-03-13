@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, X, Clock, FileText, Sparkles } from "lucide-react";
-import { AttendanceStatus } from "@/types";
+import { AttendanceStatus, Student } from "@/types";
 import {
   Tooltip,
   TooltipContent,
@@ -14,13 +14,7 @@ import {
 
 interface StudentAttendanceRowProps {
   data: {
-    student: {
-      id: string;
-      name: string;
-      avatarUrl?: string;
-      studentId: string;
-      email: string;
-    };
+    student: Student;
     status: AttendanceStatus;
     note?: string;
   };

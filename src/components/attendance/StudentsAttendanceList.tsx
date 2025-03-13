@@ -2,18 +2,12 @@
 import React from 'react';
 import { Users, CheckCircle2, XCircle, BadgeAlert } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AttendanceStatus } from "@/types";
+import { AttendanceStatus, Student } from "@/types";
 import StudentAttendanceRow from './StudentAttendanceRow';
 
 interface StudentsAttendanceListProps {
   filteredStudents: {
-    student: {
-      id: string;
-      name: string;
-      avatarUrl?: string;
-      studentId: string;
-      email: string;
-    };
+    student: Student;
     status: AttendanceStatus;
     note?: string;
   }[];

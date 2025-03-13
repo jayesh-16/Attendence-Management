@@ -14,7 +14,7 @@ import {
   mockClasses, 
   getStudentsWithAttendance 
 } from "@/lib/mock-data";
-import { AttendanceStatus } from "@/types";
+import { AttendanceStatus, Student } from "@/types";
 
 // Import refactored components
 import AttendanceHeader from "@/components/attendance/AttendanceHeader";
@@ -23,6 +23,13 @@ import SearchBar from "@/components/attendance/SearchBar";
 import ClassDetailsCard from "@/components/attendance/ClassDetailsCard";
 import StudentsAttendanceList from "@/components/attendance/StudentsAttendanceList";
 import NoteDialog from "@/components/attendance/NoteDialog";
+
+// Define the correct type for attendanceData state
+interface AttendanceItem {
+  student: Student;
+  status: AttendanceStatus;
+  note?: string;
+}
 
 const AttendanceSession = () => {
   const { classId, date } = useParams<{ classId: string; date: string }>();
@@ -37,18 +44,8 @@ const AttendanceSession = () => {
   // Find the class
   const currentClass = mockClasses.find(c => c.id === classId);
   
-  // Get attendance data
-  const [attendanceData, setAttendanceData] = useState<{
-    student: {
-      id: string;
-      name: string;
-      avatarUrl?: string;
-      studentId: string;
-      email: string;
-    };
-    status: AttendanceStatus;
-    note?: string;
-  }[]>([]);
+  // Update the type definition to match the Student type
+  const [attendanceData, setAttendanceData] = useState<AttendanceItem[]>([]);
   
   useEffect(() => {
     if (classId && date) {
